@@ -1,3 +1,5 @@
+import { TileInfoCard } from '../tiles/TileInfoCard';
+
 export function TileExplorerSection() {
   return (
     <section id="section-tiles" className="mj-section">
@@ -14,12 +16,7 @@ export function TileExplorerSection() {
         <div className="mj-pills" id="tile-pills"></div>
         <div className="mj-tile-grid-wrap">
           <div className="mj-tile-grid" id="tile-grid"></div>
-          <aside className="mj-info-card" id="tile-info">
-            <div className="mj-info-empty">
-              <div className="mj-info-empty-h">Tap a tile</div>
-              <div className="mj-info-empty-p">Pick any tile and its name, Chinese, pinyin and role show up right here.</div>
-            </div>
-          </aside>
+          <TileInfoCard />
         </div>
       </div>
     </section>
