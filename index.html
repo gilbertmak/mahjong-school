@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mahjong for beginners</title>
+<meta name="description" content="Learn mahjong in an afternoon. Hong Kong Old Style — tiles, winning hands, game flow, scoring, real-table scenarios, and where to learn more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script defer src="app.js"></script>
+</head>
+<body>
+
+<aside class="mj-sidenav" aria-label="Section navigation">
+  <div class="mj-brand">
+    <span class="mj-brand-logo" aria-hidden="true"></span>
+    <span class="mj-brand-name">Mahjong for beginners</span>
+  </div>
+  <nav class="mj-nav">
+    <a href="#section-tiles" class="is-active"><span>What are the tiles?</span></a>
+    <a href="#section-win"><span>How do you win?</span></a>
+    <a href="#section-flow"><span>How do you draw &amp; deal?</span></a>
+    <a href="#section-actions"><span>Valid moves on a turn</span></a>
+    <a href="#section-faan"><span>How is it scored?</span></a>
+    <a href="#section-practice"><span>Play through scenarios</span></a>
+    <a href="#section-drills"><span>Random drills</span></a>
+    <a href="#section-demo"><span>Watch a round</span></a>
+    <a href="#section-play"><span>Play a round</span></a>
+  </nav>
+  <div class="mj-theme-picker">
+    <div class="mj-theme-label">Ruleset</div>
+    <button class="mj-theme-btn" data-set-ruleset="hk">Hong Kong</button>
+    <button class="mj-theme-btn" data-set-ruleset="sg">Singapore</button>
+  </div>
+</aside>
+
+<header class="mj-topbar-mobile">
+  <div class="mj-topbar-mobile-row">
+    <div class="mj-brand">
+      <span class="mj-brand-logo" aria-hidden="true"></span>
+      <span class="mj-brand-name">Mahjong for beginners</span>
+    </div>
+    <button class="mj-menu-btn" aria-label="Toggle menu">
+      <span class="mj-menu-btn-label">What are the tiles?</span>
+      <span aria-hidden="true">⌄</span>
+    </button>
+  </div>
+  <nav class="mj-nav-mobile">
+    <a href="#section-tiles">What are the tiles?</a>
+    <a href="#section-win">How do you win?</a>
+    <a href="#section-flow">How do you draw &amp; deal?</a>
+    <a href="#section-actions">Valid moves on a turn</a>
+    <a href="#section-faan">How is it scored?</a>
+    <a href="#section-practice">Play through scenarios</a>
+    <a href="#section-drills">Random drills</a>
+    <a href="#section-demo">Watch a round</a>
+    <a href="#section-play">Play a round</a>
+  </nav>
+</header>
+
+<main class="mj-main" id="top">
+
+  <section class="mj-hero">
+    <h1>Mahjong (<span class="mj-zh">麻將</span>)<br>for beginners</h1>
+    <p class="mj-hero-p">Learn about the tiles, the rules and how not to lose money to the professional retired aunties.</p>
+  </section>
+
+  <section id="section-tiles" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: the tiles">牌</div>
+      <h2 class="mj-h2">What are the <em>tiles</em>?</h2>
+      <p class="mj-lede">The set breaks into three counting suits — Dots, Bamboo and Characters — each numbered
+        one to nine with four copies apiece. Above those sit the honours: four <strong>winds</strong> and
+        three <strong>dragons</strong>. Then eight bonus tiles, the <em>flowers</em> and <em>seasons</em>.
+        Tap a tile to read its name, its Chinese, and what it does.</p>
+    </div>
+
+    <div class="mj-tile-explorer">
+      <div class="mj-pills" id="tile-pills"></div>
+      <div class="mj-tile-grid-wrap">
+        <div class="mj-tile-grid" id="tile-grid"></div>
+        <aside class="mj-info-card" id="tile-info">
+          <div class="mj-info-empty">
+            <div class="mj-info-empty-h">Tap a tile</div>
+            <div class="mj-info-empty-p">Pick any tile and its name, Chinese, pinyin and role show up right here.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="section-win" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: the winning hand">糊</div>
+      <h2 class="mj-h2">How do you <em>win</em>?</h2>
+      <p class="mj-lede">A finished hand is fourteen tiles split into <strong>four sets and a single pair</strong>.
+        A set is either a run of three in one suit (a chow), three of a kind (a pung), or four (a kong).
+        And before you can call it, the hand has to be worth at least <strong><span data-rs="min">3</span> <span data-rs="unit">faan</span></strong>
+        from the patterns below — so they're worth learning.</p>
+    </div>
+
+    <div class="mj-hand-reveal">
+      <div class="mj-hand-accordion" id="hand-accordion"></div>
+      <div class="mj-hand-stage" id="hand-stage"></div>
+    </div>
+
+    <div class="mj-vi-block">
+      <div class="mj-vi-head">
+        <h3 class="mj-h3">Spot the difference</h3>
+        <p class="mj-vi-sub">Beginners stumble most on what really counts as a set. Here are the shapes that pass — and the look-alikes that don't.</p>
+      </div>
+      <div class="mj-vi-cols">
+        <div class="mj-vi-valid">
+          <div class="mj-vi-col-head"><span class="mj-vi-check">✓</span> These are real sets</div>
+          <div id="vi-valid"></div>
+        </div>
+        <div class="mj-vi-invalid">
+          <div class="mj-vi-col-head"><span class="mj-vi-check">✗</span> These are not</div>
+          <div id="vi-invalid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mj-sandbox">
+      <div class="mj-sandbox-head">
+        <h3 class="mj-h3">Build one yourself</h3>
+        <p>Tap tiles from the palette into the four set slots and the pair. Each slot calls out what you've built — chow, pung or pair — as you go. Lay down all fourteen and the bar underneath tells you whether the hand would actually win.</p>
+      </div>
+      <div id="sandbox"></div>
+    </div>
+  </section>
+
+  <section id="section-flow" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: setting up">局</div>
+      <h2 class="mj-h2">How do you <em>draw</em> &amp; <em>deal</em>?</h2>
+      <p class="mj-lede">There's a bit of setup first: shuffle the tiles, stack them into a wall, crack it open
+        with the dice, then hand out 13 to each player — with one spare going to the dealer for a starting 14.</p>
+    </div>
+
+    <div class="mj-dealer-card">
+      <div class="mj-dealer-item">
+        <div class="mj-dealer-item-h">Pick the dealer</div>
+        <p>Everyone throws two dice. Whoever rolls <strong>highest</strong> takes the <em>East</em> seat for the
+          opening hand; if there's a tie, only the tied players roll again.</p>
+      </div>
+      <div class="mj-dealer-divider"></div>
+      <div class="mj-dealer-item">
+        <div class="mj-dealer-item-h">Seating</div>
+        <p>Each seat takes a <em>wind</em> — East, with South to its right, then West, then North.
+          Play runs anti-clockwise around the table.</p>
+      </div>
+      <div class="mj-dealer-divider"></div>
+      <div class="mj-dealer-item">
+        <div class="mj-dealer-item-h">Rotation</div>
+        <p>Win as East and you keep the seat; otherwise East <strong>passes</strong> to the next player.
+          The round's prevailing wind shifts once every four full go-arounds.</p>
+      </div>
+    </div>
+
+    <div class="mj-draw-steps">
+      <div class="mj-draw-step">
+        <div class="mj-draw-step-num">1</div>
+        <div class="mj-draw-step-content">
+          <div class="mj-draw-step-title">Build the wall</div>
+          <p>Shuffle all <span data-rs="tilecount">144</span> tiles face-down, then build a square wall in front of the four players — two tiles high, 34 stacks to a side.</p>
+        </div>
+      </div>
+      <div class="mj-draw-step">
+        <div class="mj-draw-step-num">2</div>
+        <div class="mj-draw-step-content">
+          <div class="mj-draw-step-title">Break the wall</div>
+          <p>The dealer rolls once more and counts that many seats round from East; that seat's wall is where you break in. Count the same number of stacks from its right end — dealing starts there.</p>
+          <div class="mj-draw-step-note"><strong>Why?</strong> It scrambles the starting point, so no one can read the wall ahead of time.</div>
+        </div>
+      </div>
+      <div class="mj-draw-step">
+        <div class="mj-draw-step-num">3</div>
+        <div class="mj-draw-step-content">
+          <div class="mj-draw-step-title">Deal 13 to each</div>
+          <p>Going anti-clockwise, each player takes tiles in blocks of four. Three passes leaves everyone on twelve; one more tile each makes thirteen — except <strong>East takes two</strong>, opening with fourteen.</p>
+        </div>
+      </div>
+      <div class="mj-draw-step">
+        <div class="mj-draw-step-num">4</div>
+        <div class="mj-draw-step-content">
+          <div class="mj-draw-step-title">Set aside bonuses</div>
+          <p data-rs="bonusReveal">Got a <em>flower</em> or <em>season</em>? Flip it face-up and pull a fresh tile from the tail of the wall (the "dead wall"). Keep going until nobody is holding a bonus tile.</p>
+          <div class="mj-draw-step-note" data-rs="bonusNote">It works the same mid-game: the moment you draw a flower, show it and replace it from the dead wall.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="section-actions" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: on your turn">打</div>
+      <h2 class="mj-h2">What can you do each <em>turn</em>?</h2>
+      <p class="mj-lede">On your go you <strong>draw one</strong> tile and <strong>let one go</strong> — that's the whole turn.
+        In between, anyone can break in with a call: three of them simply claim a tile (chow, pung, kong), while the fourth — mahjong — ends the hand.</p>
+    </div>
+
+    <div class="mj-action-list" id="action-list"></div>
+
+    <div class="mj-priority">
+      <div class="mj-priority-h">Who wins a call — when more than one player wants the same tile</div>
+      <div class="mj-priority-ladder" id="priority-ladder"></div>
+    </div>
+  </section>
+
+  <section id="section-faan" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: scoring">分</div>
+      <h2 class="mj-h2">How is it <em>scored</em>?</h2>
+      <p class="mj-lede" data-rs="scoringLede">Hong Kong scoring uses <em>faan</em> (番) — doubling units. Most tables require <strong>≥3 faan</strong> to declare, and patterns stack. A hand can score from several at once. Hands of 10 faan and up usually pay out as a "limit" hand.</p>
+    </div>
+
+    <div class="mj-scoring-fan">
+      <strong>Minimum to win:</strong> <span data-rs="minSentence">3 faan, typical. Confirm before you sit — some friendly tables play 1 faan, some 5.</span>
+      <em>Whatever the table agrees on beats any printed chart.</em>
+    </div>
+
+    <div class="mj-scoring-grid" id="faan-grid"></div>
+  </section>
+
+  <section id="section-practice" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: practice scenarios">題</div>
+      <h2 class="mj-h2">Play through real <em>decisions</em>.</h2>
+      <p class="mj-lede">Seven everyday spots a beginner lands in — reading a win, picking a discard, judging a call,
+        working out your wait, and playing safe near the end. Getting one wrong is the point: read why, then carry on.</p>
+    </div>
+
+    <div class="mj-scenario" id="scenario"></div>
+  </section>
+
+  <section id="section-drills" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: random drills">隨</div>
+      <h2 class="mj-h2">Practise on random <em>hands</em>.</h2>
+      <p class="mj-lede">Three exercises built on randomly dealt tiles, so a brand-new hand turns up on every click. The checker answers instantly — keep at it until the shapes jump out without you thinking.</p>
+    </div>
+
+    <div class="mj-drill-tabs" role="tablist">
+      <button class="mj-drill-tab is-active" data-drill="waits" role="tab">Find the wait</button>
+      <button class="mj-drill-tab" data-drill="winornot" role="tab">Win or not?</button>
+      <button class="mj-drill-tab" data-drill="discard" role="tab">Best discard</button>
+    </div>
+
+    <div class="mj-drill" id="drill"></div>
+  </section>
+
+  <section id="section-demo" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: watch a round">觀</div>
+      <h2 class="mj-h2">Watch a full <em>round</em>.</h2>
+      <p class="mj-lede">Sit back while four bots play a hand from shuffle to finish — a win, or a dead wall. Every tile is shown, so you can watch each seat take shape, with a running caption on each draw, discard and call. Speed it up, slow it down, or step through one move at a time.</p>
+    </div>
+
+    <div class="mj-demo">
+      <div class="mj-demo-controls">
+        <button class="mj-btn mj-btn-primary" data-demo="play">▶ Deal a round</button>
+        <button class="mj-btn" data-demo="pause" hidden>⏸ Pause</button>
+        <button class="mj-btn" data-demo="step">⏭ Step</button>
+        <button class="mj-btn" data-demo="restart" hidden>↺ Restart</button>
+        <label class="mj-demo-speed">
+          Speed
+          <select data-demo="speed">
+            <option value="1200">Slow</option>
+            <option value="700" selected>Normal</option>
+            <option value="280">Fast</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="mj-demo-table" id="demo-table"></div>
+
+      <div class="mj-demo-foot">
+        <div class="mj-demo-caption" id="demo-caption">Press <strong>Deal a round</strong> to begin.</div>
+        <div class="mj-demo-status" id="demo-status"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="section-play" class="mj-section">
+    <div class="mj-section-head">
+      <div class="mj-kicker" aria-label="Section: play a round">玩</div>
+      <h2 class="mj-h2">Now <em>you</em> play.</h2>
+      <p class="mj-lede">Take the <strong>East</strong> seat — you're the dealer — against three bots. You see your own tiles; theirs stay hidden, same as a real table. Draw each turn, then tap a tile to throw it. If someone discards something you can pung, chow or win on, you'll get the option. When the hand ends, you'll see exactly which patterns paid out.</p>
+    </div>
+
+    <div class="mj-play">
+      <div class="mj-play-table" id="play-table"></div>
+      <div class="mj-play-foot">
+        <div class="mj-play-action" id="play-action"></div>
+        <div class="mj-play-status" id="play-status"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mj-foot">
+    <div class="mj-foot-brand">Mahjong for beginners</div>
+    <div class="mj-foot-note">
+      A beginner's visual guide — <span data-rs="variantName">Hong Kong Old Style</span>. Tiles rendered from Unicode (U+1F000–U+1F021);
+      design language adapted from <a href="https://themahjong.guide/" target="_blank" rel="noopener" style="color:var(--ink-muted);">themahjong.guide</a>.
+      Works offline — just keep the three files (index.html, styles.css, app.js) together.
+    </div>
+  </footer>
+
+</main>
+
+</body>
+</html>
