@@ -1,4 +1,8 @@
+import { useRulesetCopy } from '../../state/RulesetContext';
+
 export function GameFlowSection() {
+  const copy = useRulesetCopy();
+
   return (
     <section id="section-flow" className="mj-section">
       <div className="mj-section-head">
@@ -33,7 +37,7 @@ export function GameFlowSection() {
           <div className="mj-draw-step-num">1</div>
           <div className="mj-draw-step-content">
             <div className="mj-draw-step-title">Build the wall</div>
-            <p>Shuffle all <span data-rs="tilecount">144</span> tiles face-down, then build a square wall in front of the four players — two tiles high, 34 stacks to a side.</p>
+            <p>Shuffle all <span>{copy.tilecount}</span> tiles face-down, then build a square wall in front of the four players — two tiles high, 34 stacks to a side.</p>
           </div>
         </div>
         <div className="mj-draw-step">
@@ -55,8 +59,8 @@ export function GameFlowSection() {
           <div className="mj-draw-step-num">4</div>
           <div className="mj-draw-step-content">
             <div className="mj-draw-step-title">Set aside bonuses</div>
-            <p data-rs="bonusReveal">Got a <em>flower</em> or <em>season</em>? Flip it face-up and pull a fresh tile from the tail of the wall (the &quot;dead wall&quot;). Keep going until nobody is holding a bonus tile.</p>
-            <div className="mj-draw-step-note" data-rs="bonusNote">It works the same mid-game: the moment you draw a flower, show it and replace it from the dead wall.</div>
+            <p>{copy.bonusReveal}</p>
+            <div className="mj-draw-step-note">{copy.bonusNote}</div>
           </div>
         </div>
       </div>

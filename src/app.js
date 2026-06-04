@@ -12,75 +12,59 @@ import { getFaanCatalog, getScoreValues, computeFaan } from './domain/scoring';
 const VALID_RULESETS = ['hk', 'sg'];
 const RULESET_STORAGE = 'mj-ruleset';
 
+function isValidRuleset(value) {
+  return VALID_RULESETS.includes(value);
+}
+
 function getStoredRuleset() {
   try {
     const v = localStorage.getItem(RULESET_STORAGE);
-    if (VALID_RULESETS.includes(v)) return v;
+    if (isValidRuleset(v)) return v;
   } catch {}
   return 'hk';
 }
 
-const RULESET = getStoredRuleset();
-const IS_SG = RULESET === 'sg';
-const IS_HK = RULESET === 'hk';
-const UNIT = IS_SG ? 'tai' : 'faan';
-const UNIT_CAP = IS_SG ? 'Tai' : 'Faan';
-const MIN_TO_WIN = IS_SG ? 1 : 3;
-const TILES = tilesForRuleset(RULESET);
-const TILE_BY_ID = tileByIdForRuleset(RULESET);
-const ACTIONS = createActions(UNIT);
-const SCENARIOS = createScenarios(UNIT, IS_SG);
-const FAAN = getFaanCatalog(RULESET);
-const SCORE_VALUES = getScoreValues(RULESET);
-const SCORE_UNIT = UNIT;
+let currentRuleset = getStoredRuleset();
+let IS_SG;
+let IS_HK;
+let UNIT;
+let UNIT_CAP;
+let MIN_TO_WIN;
+let TILES;
+let TILE_BY_ID;
+let ACTIONS;
+let SCENARIOS;
+let FAAN;
+let SCORE_VALUES;
+let SCORE_UNIT;
 
-function setRuleset(name) {
-  if (!VALID_RULESETS.includes(name)) return;
-  try { localStorage.setItem(RULESET_STORAGE, name); } catch {}
-  location.reload();
+function updateRulesetDerivatives(ruleset = currentRuleset) {
+  currentRuleset = isValidRuleset(ruleset) ? ruleset : 'hk';
+  IS_SG = currentRuleset === 'sg';
+  IS_HK = currentRuleset === 'hk';
+  UNIT = IS_SG ? 'tai' : 'faan';
+  UNIT_CAP = IS_SG ? 'Tai' : 'Faan';
+  MIN_TO_WIN = IS_SG ? 1 : 3;
+  TILES = tilesForRuleset(currentRuleset);
+  TILE_BY_ID = tileByIdForRuleset(currentRuleset);
+  ACTIONS = createActions(UNIT);
+  SCENARIOS = createScenarios(UNIT, IS_SG);
+  FAAN = getFaanCatalog(currentRuleset);
+  SCORE_VALUES = getScoreValues(currentRuleset);
+  SCORE_UNIT = UNIT;
 }
 
-/* Per-ruleset text shown in the UI (filled by applyRulesetText on boot). */
-const RS_TEXT = {
-  hk: {
-    kicker: 'Hong Kong rules · 香港麻將',
-    tilecount: '144',
-    min: '3',
-    unit: 'faan',
-    unitcap: 'Faan',
-    variantName: 'Hong Kong Old Style',
-    scoringLede: 'Hong Kong counts in <em>faan</em> (番), where each one doubles the payout. You usually need <strong>≥3 faan</strong> before a hand can be declared, and patterns add together — one hand can tick several boxes. Reach about 10 faan and most tables cap it as a "limit" hand.',
-    minSentence: 'usually 3 faan. Check first, though — easygoing tables drop it to 1, stricter ones push it to 5.',
-    bonusReveal: 'Got a <em>flower</em> or <em>season</em>? Flip it face-up and pull a fresh tile from the tail of the wall (the "dead wall"). Keep going until nobody is holding a bonus tile.',
-    bonusNote: 'It works the same mid-game: the moment you draw a flower, show it and replace it from the dead wall.',
-  },
-  sg: {
-    kicker: 'Singapore rules · 新加坡麻將',
-    tilecount: '148',
-    min: '1',
-    unit: 'tai',
-    unitcap: 'Tai',
-    variantName: 'Singapore Style',
-    scoringLede: 'Singapore counts in <em>tai</em> (台), each one doubling the payout. The bar to declare is low — usually just <strong>≥1 tai</strong> — and patterns add up, but the total is normally capped at 5 tai, with anything bigger paying the same. Singapore also throws in <em>animal tiles</em> (cat, rat, rooster, centipede), each good for 1 tai.',
-    minSentence: 'usually just 1 tai — Singapore is friendly that way — though winnings are typically capped at 5 tai.',
-    bonusReveal: 'Holding a <em>flower</em>, <em>season</em> or <em>animal</em>? Flip it face-up and draw a fresh tile from the tail of the wall (the "dead wall"). Repeat until no one is holding a bonus. Animals behave like flowers — they rest beside your hand and never go into sets.',
-    bonusNote: 'Same during play: a flower or animal you draw goes face-up at once and is replaced from the dead wall. Animals pay win or lose, and snagging both halves of a hunter-and-hunted pair (cat–rat or rooster–centipede) settles up immediately.',
-  },
-};
+updateRulesetDerivatives();
 
-function applyRulesetText() {
-  const t = RS_TEXT[RULESET];
-  for (const key in t) {
-    document.querySelectorAll(`[data-rs="${key}"]`).forEach(el => {
-      el.innerHTML = t[key];
-    });
-  }
-  // Mark the active ruleset button.
-  document.querySelectorAll('[data-set-ruleset]').forEach(b => {
-    b.classList.toggle('is-active', b.dataset.setRuleset === RULESET);
-    b.addEventListener('click', () => setRuleset(b.dataset.setRuleset));
-  });
+function setRuntimeRuleset(ruleset) {
+  if (!isValidRuleset(ruleset) || ruleset === currentRuleset) return;
+  updateRulesetDerivatives(ruleset);
+  refreshRulesetViews();
 }
+
+window.addEventListener('mj-ruleset-change', event => {
+  setRuntimeRuleset(event.detail?.ruleset);
+});
 
 /* ============================================================
    Tile data — HKOS standard + Singapore animals when ruleset = sg
@@ -150,7 +134,7 @@ function renderTileRow(tileIds, opts = {}) {
 /* ============================================================
    Sidenav active highlight + mobile menu
    (Single theme — no theme switcher. Ruleset switching lives in
-   applyRulesetText / setRuleset near the top of the file.)
+   the React ruleset context in src/state/RulesetContext.tsx.)
    ============================================================ */
 
 function initNav() {
@@ -210,13 +194,15 @@ const SUIT_META = {
   [SUIT.ANIMAL]:  { title:'Animals',    zh:'動物 · dòngwù', desc:'A Singapore extra: Cat 貓, Rat 鼠, Rooster 雞 and Centipede 蜈蚣. Any animal you hold is worth 1 tai, and catching both halves of a hunter-and-hunted pair (cat–rat or rooster–centipede) pays out on the spot.', count:'4 unique · 1 of each · 4 total' },
 };
 
-const FILTER_GROUPS = [
-  { id:'all',    label:'All tiles', test:t => true },
-  { id:'suit',   label:'Suits',     test:t => t.group === 'suit' },
-  { id:'honor',  label:'Honors',    test:t => t.group === 'honor' },
-  { id:'bonus',  label:'Bonus',     test:t => t.group === 'bonus' },
-  ...(IS_SG ? [{ id:'animal', label:'Animals', test:t => t.group === 'animal' }] : []),
-];
+function getFilterGroups() {
+  return [
+    { id:'all',    label:'All tiles', test:t => true },
+    { id:'suit',   label:'Suits',     test:t => t.group === 'suit' },
+    { id:'honor',  label:'Honors',    test:t => t.group === 'honor' },
+    { id:'bonus',  label:'Bonus',     test:t => t.group === 'bonus' },
+    ...(IS_SG ? [{ id:'animal', label:'Animals', test:t => t.group === 'animal' }] : []),
+  ];
+}
 
 function initTileExplorer() {
   const pillHost = document.querySelector('#tile-pills');
@@ -227,7 +213,8 @@ function initTileExplorer() {
 
   function render() {
     pillHost.innerHTML = '';
-    FILTER_GROUPS.forEach(f => {
+    const filterGroups = getFilterGroups();
+    filterGroups.forEach(f => {
       const pill = document.createElement('button');
       pill.type = 'button';
       pill.className = 'mj-pill' + (active === f.id ? ' is-active' : '');
@@ -238,7 +225,8 @@ function initTileExplorer() {
     });
 
     gridHost.innerHTML = '';
-    const filter = FILTER_GROUPS.find(f => f.id === active).test;
+    if (!filterGroups.some(f => f.id === active)) active = 'all';
+    const filter = filterGroups.find(f => f.id === active).test;
     const orderedSuits = [SUIT.DOTS, SUIT.BAM, SUIT.CHAR, SUIT.WIND, SUIT.DRAGON, SUIT.FLOWER, SUIT.SEASON, ...(IS_SG ? [SUIT.ANIMAL] : [])];
     orderedSuits.forEach(s => {
       const tiles = TILES.filter(t => t.suit === s && filter(t));
@@ -307,6 +295,9 @@ function initHands() {
   const host = document.querySelector('#hand-accordion');
   const stageHost = document.querySelector('#hand-stage');
   if (!host || !stageHost) return;
+
+  host.innerHTML = '';
+  stageHost.innerHTML = '';
 
   HANDS.forEach((h, idx) => {
     const item = document.createElement('div');
@@ -409,6 +400,7 @@ function renderHandStage(hand) {
 function initActions() {
   const host = document.querySelector('#action-list');
   if (host) {
+    host.innerHTML = '';
     ACTIONS.forEach(a => {
       const row = document.createElement('div');
       row.className = 'mj-action-row';
@@ -440,6 +432,7 @@ function initActions() {
   }
   const phost = document.querySelector('#priority-ladder');
   if (phost) {
+    phost.innerHTML = '';
     PRIORITY.forEach(p => {
       const r = document.createElement('div');
       r.className = 'mj-prio-row';
@@ -456,6 +449,7 @@ function initActions() {
 function initFaan() {
   const host = document.querySelector('#faan-grid');
   if (!host) return;
+  host.innerHTML = '';
   FAAN.forEach(p => {
     const row = document.createElement('div');
     row.className = 'mj-score-row' + (p.limit ? ' is-limit' : '');
@@ -2364,7 +2358,7 @@ function renderPlayWinBanner() {
   } else {
     const won = g.winner === PLAY.humanSeat;
     const winner = g.players[g.winner];
-    const score = computeFaan(winner, g, RULESET, SEAT_NAMES);
+    const score = computeFaan(winner, g, currentRuleset, SEAT_NAMES);
     banner.classList.add(won ? 'is-win' : 'is-loss');
     const winTileName = TILE_BY_ID[g.winTile]?.name || '';
     const headline = won
@@ -2399,6 +2393,29 @@ function renderPlayWinBanner() {
   wrapTermsIn(banner);
 }
 
+function refreshRulesetViews() {
+  initTileExplorer();
+  initHands();
+  initSandbox();
+  initActions();
+  initFaan();
+  initScenarios();
+
+  if (DEMO.timer) { clearTimeout(DEMO.timer); DEMO.timer = null; }
+  DEMO.game = null;
+  DEMO.mode = 'idle';
+  renderDemoIdle();
+
+  if (PLAY.timer) { clearTimeout(PLAY.timer); PLAY.timer = null; }
+  PLAY.game = null;
+  PLAY.mode = 'idle';
+  PLAY.pendingCall = null;
+  PLAY.structureBuilt = false;
+  renderPlayIdle();
+
+  wrapTermsIn(document.body);
+}
+
 /* ============================================================
    Boot + self-test
    ============================================================ */
@@ -2412,7 +2429,6 @@ function selfTest() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  applyRulesetText();          // fills [data-rs="..."] elements + wires ruleset buttons
   initNav();
   initTileExplorer();
   initHands();
