@@ -1,3 +1,8 @@
+import { SUIT, tilesForRuleset, tileByIdForRuleset, PLAYABLE_TILE_IDS, tileCode, codeToId, handToCounts } from './domain/tiles';
+import { canFormSets, isThirteenOrphans, isWinningHand, findWaits, decomposeWin, collectSets, classifySet } from './domain/handValidation';
+import { HANDS, createActions, PRIORITY, createScenarios, DRILL_STATS } from './content';
+import { getFaanCatalog, getScoreValues, computeFaan } from './domain/scoring';
+
 'use strict';
 
 /* ============================================================
@@ -21,6 +26,13 @@ const IS_HK = RULESET === 'hk';
 const UNIT = IS_SG ? 'tai' : 'faan';
 const UNIT_CAP = IS_SG ? 'Tai' : 'Faan';
 const MIN_TO_WIN = IS_SG ? 1 : 3;
+const TILES = tilesForRuleset(RULESET);
+const TILE_BY_ID = tileByIdForRuleset(RULESET);
+const ACTIONS = createActions(UNIT);
+const SCENARIOS = createScenarios(UNIT, IS_SG);
+const FAAN = getFaanCatalog(RULESET);
+const SCORE_VALUES = getScoreValues(RULESET);
+const SCORE_UNIT = UNIT;
 
 function setRuleset(name) {
   if (!VALID_RULESETS.includes(name)) return;
@@ -74,79 +86,6 @@ function applyRulesetText() {
    Tile data — HKOS standard + Singapore animals when ruleset = sg
    ============================================================ */
 
-const SUIT = {
-  DOTS: 'dots', BAM: 'bamboo', CHAR: 'chars',
-  WIND: 'wind', DRAGON: 'dragon',
-  FLOWER: 'flower', SEASON: 'season',
-  ANIMAL: 'animal',
-};
-
-const NUM_EN = ['One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
-const NUM_PY = ['yī','èr','sān','sì','wǔ','liù','qī','bā','jiǔ'];
-
-const TILES = (() => {
-  const out = [];
-  const gDots = ['🀙','🀚','🀛','🀜','🀝','🀞','🀟','🀠','🀡'];
-  const gBam  = ['🀐','🀑','🀒','🀓','🀔','🀕','🀖','🀗','🀘'];
-  const gChar = ['🀇','🀈','🀉','🀊','🀋','🀌','🀍','🀎','🀏'];
-  for (let i = 1; i <= 9; i++) {
-    out.push({ id:'d'+i, suit:SUIT.DOTS, group:'suit', value:i, glyph:gDots[i-1],
-      name: NUM_EN[i-1]+' of Dots', zh:i+'筒', pinyin:NUM_PY[i-1]+' tǒng',
-      isTerminal: i===1||i===9 });
-    out.push({ id:'b'+i, suit:SUIT.BAM, group:'suit', value:i, glyph:gBam[i-1],
-      name: NUM_EN[i-1]+' of Bamboo', zh:i+'條', pinyin:NUM_PY[i-1]+' tiáo',
-      isTerminal: i===1||i===9 });
-    out.push({ id:'c'+i, suit:SUIT.CHAR, group:'suit', value:i, glyph:gChar[i-1],
-      name: NUM_EN[i-1]+' of Characters', zh:i+'萬', pinyin:NUM_PY[i-1]+' wàn',
-      isTerminal: i===1||i===9 });
-  }
-  // Winds render as framed Chinese characters (東 南 西 北) rather than the
-  // tiny Unicode mahjong-tile glyphs — cleaner and more consistent.
-  [['we','East','東','dōng'],
-   ['ws','South','南','nán'],
-   ['ww','West','西','xī'],
-   ['wn','North','北','běi']].forEach(([id,en,zh,py]) => {
-    out.push({ id, suit:SUIT.WIND, group:'honor', value:id[1], glyph:zh,
-      name: en+' Wind', zh, pinyin:py, isHonor:true });
-  });
-  // Dragons render as framed Chinese characters (中 發 白) like the winds.
-  [['dr','Red Dragon','中','zhōng','r'],
-   ['dg','Green Dragon','發','fā','g'],
-   ['dw','White Dragon','白','bái','w']].forEach(([id,en,zh,py,col]) => {
-    out.push({ id, suit:SUIT.DRAGON, group:'honor', value:id[1], glyph:zh, dragonColor:col,
-      name: en, zh, pinyin:py, isHonor:true });
-  });
-  [['f1','Plum','梅','méi','🀦'],
-   ['f2','Orchid','蘭','lán','🀧'],
-   ['f3','Chrysanthemum','菊','jú','🀨'],
-   ['f4','Bamboo Flower','竹','zhú','🀩']].forEach(([id,en,zh,py,gl]) => {
-    out.push({ id, suit:SUIT.FLOWER, group:'bonus', value:+id[1], glyph:gl,
-      name:en, zh, pinyin:py, isBonus:true });
-  });
-  [['s1','Spring','春','chūn','🀢'],
-   ['s2','Summer','夏','xià','🀣'],
-   ['s3','Autumn','秋','qiū','🀤'],
-   ['s4','Winter','冬','dōng','🀥']].forEach(([id,en,zh,py,gl]) => {
-    out.push({ id, suit:SUIT.SEASON, group:'bonus', value:+id[1], glyph:gl,
-      name:en, zh, pinyin:py, isBonus:true });
-  });
-
-  // Singapore-only — four animal bonus tiles.
-  // Predator-prey pairs: cat ↔ rat, rooster ↔ centipede.
-  if (IS_SG) {
-    [['x1','Cat',      '貓',   'māo',   '貓', 'mouse'],
-     ['x2','Rat',      '鼠',   'shǔ',   '鼠', 'cat'],
-     ['x3','Rooster',  '雞',   'jī',    '雞', 'centipede'],
-     ['x4','Centipede','蜈蚣', 'wú gōng','蜈', 'rooster']].forEach(([id,en,zh,py,gl,prey]) => {
-      out.push({ id, suit: SUIT.ANIMAL, group: 'animal', value: +id[1], glyph: gl,
-        name: en, zh, pinyin: py, isAnimal: true, isBonus: true, pairWith: prey });
-    });
-  }
-
-  return out;
-})();
-
-const TILE_BY_ID = Object.fromEntries(TILES.map(t => [t.id, t]));
 
 /* ============================================================
    Tile rendering — paper card w/ double frame
@@ -207,134 +146,6 @@ function renderTileRow(tileIds, opts = {}) {
   return wrap;
 }
 
-/* ============================================================
-   Hand logic — winning hand validator
-   ============================================================ */
-
-function tileCode(id) {
-  // Honors first — dragons (dr/dg/dw) start with 'd' and must NOT fall into
-  // the dots branch below. Animals (x1..x4) are bonus tiles → return -1.
-  const honors = { we:27, ws:28, ww:29, wn:30, dr:31, dg:32, dw:33 };
-  if (id in honors) return honors[id];
-  if (id[0] === 'd') return +id.slice(1) - 1;
-  if (id[0] === 'b') return 9 + +id.slice(1) - 1;
-  if (id[0] === 'c') return 18 + +id.slice(1) - 1;
-  return -1;
-}
-function codeToId(c) {
-  if (c < 9)  return 'd'+(c+1);
-  if (c < 18) return 'b'+(c-9+1);
-  if (c < 27) return 'c'+(c-18+1);
-  return ['we','ws','ww','wn','dr','dg','dw'][c-27];
-}
-function handToCounts(ids) {
-  const c = new Array(34).fill(0);
-  ids.forEach(id => { const k = tileCode(id); if (k >= 0) c[k]++; });
-  return c;
-}
-function canFormSets(counts, left) {
-  if (left === 0) return counts.every(c => c === 0);
-  let i = 0; while (i < 34 && counts[i] === 0) i++;
-  if (i === 34) return false;
-  if (counts[i] >= 3) {
-    counts[i] -= 3;
-    if (canFormSets(counts, left - 1)) { counts[i] += 3; return true; }
-    counts[i] += 3;
-  }
-  if (i < 27 && (i % 9) <= 6 && counts[i+1] > 0 && counts[i+2] > 0) {
-    counts[i]--; counts[i+1]--; counts[i+2]--;
-    if (canFormSets(counts, left - 1)) {
-      counts[i]++; counts[i+1]++; counts[i+2]++;
-      return true;
-    }
-    counts[i]++; counts[i+1]++; counts[i+2]++;
-  }
-  return false;
-}
-function isThirteenOrphans(ids) {
-  const required = ['d1','d9','b1','b9','c1','c9','we','ws','ww','wn','dr','dg','dw'];
-  if (ids.length !== 14) return false;
-  const c = {};
-  ids.forEach(id => { c[id] = (c[id]||0)+1; });
-  let pair = false;
-  for (const r of required) {
-    if (!c[r]) return false;
-    if (c[r] === 2) { if (pair) return false; pair = true; }
-    else if (c[r] !== 1) return false;
-  }
-  for (const k of Object.keys(c)) if (!required.includes(k)) return false;
-  return pair;
-}
-function isWinningHand(ids) {
-  if (ids.length !== 14) return false;
-  if (isThirteenOrphans(ids)) return true;
-  const c = handToCounts(ids);
-  for (let i = 0; i < 34; i++) {
-    if (c[i] >= 2) {
-      c[i] -= 2;
-      if (canFormSets(c.slice(), 4)) { c[i] += 2; return true; }
-      c[i] += 2;
-    }
-  }
-  return false;
-}
-function findWaits(ids) {
-  if (ids.length !== 13) return [];
-  const waits = [];
-  for (let i = 0; i < 34; i++) {
-    const id = codeToId(i);
-    const inHand = ids.filter(t => t === id).length;
-    if (inHand >= 4) continue;
-    if (isWinningHand([...ids, id])) waits.push(id);
-  }
-  return waits;
-}
-
-/* Decompose a 14-tile winning hand into its melds + pair, returning tile IDs.
-   Shape: { pair: [id, id], sets: [[id,id,id], ...] } or null if it doesn't win.
-   Used by computeFaan (scoring) and decomposeWinDisplay (Win-or-not drill). */
-function decomposeWin(ids) {
-  if (ids.length !== 14) return null;
-  const counts = handToCounts(ids);
-  for (let p = 0; p < 34; p++) {
-    if (counts[p] >= 2) {
-      counts[p] -= 2;
-      const sets = [];
-      if (collectSets(counts.slice(), 4, sets)) {
-        return {
-          pair: [codeToId(p), codeToId(p)],
-          sets: sets.map(set => set.map(codeToId)),
-        };
-      }
-      counts[p] += 2;
-    }
-  }
-  return null;
-}
-
-/* Backtracking helper for decomposeWin — records the chosen melds (as codes). */
-function collectSets(counts, left, out) {
-  if (left === 0) return counts.every(c => c === 0);
-  let i = 0; while (i < 34 && counts[i] === 0) i++;
-  if (i === 34) return false;
-  // pung
-  if (counts[i] >= 3) {
-    counts[i] -= 3;
-    out.push([i, i, i]);
-    if (collectSets(counts, left - 1, out)) return true;
-    out.pop();
-    counts[i] += 3;
-  }
-  // chow — suit tiles only (i < 27), rank 1..7 within the suit (i % 9 <= 6)
-  if (i < 27 && (i % 9) <= 6 && counts[i + 1] > 0 && counts[i + 2] > 0) {
-    counts[i]--; counts[i + 1]--; counts[i + 2]--;
-    out.push([i, i + 1, i + 2]);
-    if (collectSets(counts, left - 1, out)) return true;
-    out.pop();
-    counts[i]++; counts[i + 1]++; counts[i + 2]++;
-  }
-  return false;
-}
 
 /* ============================================================
    Sidenav active highlight + mobile menu
@@ -488,64 +299,6 @@ function describeTileRole(t) {
 
 /* Hand examples. Each entry has both HK (`pts`) and SG (`ptsSG`) values —
    selectHandPts() picks the right one at render time based on the ruleset. */
-const HANDS = [
-  {
-    id:'common', zh:'平糊', name:'Common Hand', pts:'1 faan', ptsSG:'1 tai',
-    desc:'The simplest scoring shape. Every set is a chow and the pair is non-scoring (not your seat wind, round wind, or a dragon).',
-    sets: [['d2','d3','d4'], ['b3','b4','b5'], ['c6','c7','c8'], ['d7','d8','d9']],
-    pair: ['b2','b2'],
-    formula:'4 chows · pair'
-  },
-  {
-    id:'allpung', zh:'對對糊', name:'All Pungs', pts:'3 faan', ptsSG:'2 tai',
-    desc:'Every set is a pung (or kong). No chows. The most common "real" scoring hand for beginners — the patterns are simpler to spot.',
-    sets: [['d3','d3','d3'], ['b6','b6','b6'], ['c2','c2','c2'], ['we','we','we']],
-    pair: ['dr','dr'],
-    formula:'4 pungs · pair'
-  },
-  {
-    id:'mixed', zh:'混一色', name:'Mixed One Suit', pts:'3 faan', ptsSG:'2 tai',
-    desc:'A single number suit plus any honors. Easier to assemble than Pure One Suit — honors give you flexibility.',
-    sets: [['b1','b2','b3'], ['b4','b5','b6'], ['b7','b7','b7'], ['we','we','we']],
-    pair: ['dr','dr'],
-    formula:'1 suit + honors'
-  },
-  {
-    id:'pure', zh:'清一色', name:'Pure One Suit', pts:'7 faan', ptsSG:'4 tai',
-    desc:'One suit only. No honors, no other suits. Hard to build — opponents see it coming — but pays big.',
-    sets: [['c1','c2','c3'], ['c4','c5','c6'], ['c7','c8','c9'], ['c2','c3','c4']],
-    pair: ['c5','c5'],
-    formula:'1 suit, no honors'
-  },
-  {
-    id:'small3', zh:'小三元', name:'Small Three Dragons', pts:'3 faan', ptsSG:'2 tai',
-    desc:'Pungs of two dragons plus a pair of the third. The pair has to be the dragons — not just any pair.',
-    sets: [['dr','dr','dr'], ['dg','dg','dg'], ['d2','d3','d4'], ['b6','b6','b6']],
-    pair: ['dw','dw'],
-    formula:'2 dragon pungs · dragon pair'
-  },
-  {
-    id:'great3', zh:'大三元', name:'Great Three Dragons', pts:'8 faan', ptsSG:'4 tai',
-    desc:'Pungs of all three dragons. The pair is anything else. A showcase hand — Singapore usually treats it as pay-all from the discarder.',
-    sets: [['dr','dr','dr'], ['dg','dg','dg'], ['dw','dw','dw'], ['d3','d4','d5']],
-    pair: ['b7','b7'],
-    formula:'3 dragon pungs · pair'
-  },
-  {
-    id:'honors', zh:'字一色', name:'All Honors', pts:'10 faan', ptsSG:'limit',
-    desc:'Every tile is a wind or a dragon. No numbered suit tiles at all. Rare. Pays a limit hand at most tables.',
-    sets: [['we','we','we'], ['ws','ws','ws'], ['dr','dr','dr'], ['dg','dg','dg']],
-    pair: ['dw','dw'],
-    formula:'honors only'
-  },
-  {
-    id:'thirteen', zh:'十三么', name:'Thirteen Orphans', pts:'13 faan', ptsSG:'8 tai',
-    desc:'One of every terminal (1 and 9 of each suit) and every honor, plus any one of them as a pair. The famous exception to "4 sets + pair".',
-    flat: ['d1','d9','b1','b9','c1','c9','we','ws','ww','wn','dr','dg','dw','dw'],
-    formula:'special — see flat layout'
-  },
-];
-
 function handPts(h) {
   return IS_SG ? (h.ptsSG || h.pts) : h.pts;
 }
@@ -587,21 +340,6 @@ function selectHand(id) {
     if (body) body.hidden = !open;
   });
   renderHandStage(hand);
-}
-
-/* Classify a set of tile-ids into chow/pung/kong/invalid */
-function classifySet(tiles) {
-  if (tiles.length === 4 && tiles.every(t => t === tiles[0])) return 'kong';
-  if (tiles.length === 3 && tiles[0] === tiles[1] && tiles[1] === tiles[2]) return 'pung';
-  if (tiles.length === 3) {
-    const codes = tiles.map(tileCode).sort((a, b) => a - b);
-    if (codes[0] >= 0 && codes[0] < 27) {
-      const suit = Math.floor(codes[0] / 9);
-      const allSame = codes.every(c => Math.floor(c / 9) === suit);
-      if (allSame && codes[1] === codes[0] + 1 && codes[2] === codes[0] + 2) return 'chow';
-    }
-  }
-  return 'invalid';
 }
 
 const MELD_LABELS = {
@@ -667,32 +405,6 @@ function renderHandStage(hand) {
    04 — Turn actions
    ============================================================ */
 
-const ACTIONS = [
-  { zh:'摸牌', py:'mō pái', lit:'"feel for a tile"',
-    name:'Draw', desc:'Take one tile from the wall — now you have 14 and must discard one.',
-    example:[], timing:'on-turn', when:'Always — starts your turn' },
-  { zh:'打牌', py:'dǎ pái', lit:'"strike a tile"',
-    name:'Discard', desc:'Place one tile from your hand face-up in front of you. Your turn ends and other players may call it.',
-    example:[], timing:'on-turn', when:'Always — ends your turn' },
-  { zh:'上', py:'shàng', lit:'"go up"',
-    name:'Chow', desc:'Claim the discarded tile to complete a sequence. Reveal the chow face-up.',
-    example:['d3','d4','d5'], timing:'out-of-turn', when:'Only from the player on your left' },
-  { zh:'碰', py:'pèng', lit:'"to bump"',
-    name:'Pung', desc:'Claim a discard to complete a triplet (three of a kind). Reveal the pung face-up.',
-    example:['b7','b7','b7'], timing:'out-of-turn', when:'Any player\'s discard' },
-  { zh:'槓', py:'gàng', lit:'"to bar"',
-    name:'Kong', desc:'Complete a set of four — from a discard, or from your own hand. Draw a replacement tile.',
-    example:['c2','c2','c2','c2'], timing:'either', when:'Discard or self-draw' },
-  { zh:'糊', py:'hú', lit:'"to win / paste"',
-    name:'Mahjong', desc:`Declare the winning tile — either a self-draw or someone's discard — completing 4 sets + pair with enough ${UNIT}.`,
-    example:['dr','dr'], timing:'either', when:'Any time the hand becomes complete' },
-];
-
-const PRIORITY = [
-  { rank:'1', name:'Mahjong (糊)', desc:'A declared win on a discard always beats any other call on that tile.' },
-  { rank:'2', name:'Pung / Kong (碰/槓)', desc:'Beats a chow. If two players want to pung, the closer player to the discarder\'s right wins.' },
-  { rank:'3', name:'Chow (上)', desc:'Only the player immediately after the discarder may call chow. Cannot interrupt a pung/kong on the same tile.' },
-];
 
 function initActions() {
   const host = document.querySelector('#action-list');
@@ -741,52 +453,6 @@ function initActions() {
    05 — Faan grid
    ============================================================ */
 
-const FAAN_HK = [
-  { name:'Common Hand', zh:'平糊', val:'1 faan', desc:'All chows, valueless pair.' },
-  { name:'All Pungs', zh:'對對糊', val:'3 faan', desc:'Every set a pung or kong.' },
-  { name:'Mixed One Suit', zh:'混一色', val:'3 faan', desc:'One suit plus any honors.' },
-  { name:'Pure One Suit', zh:'清一色', val:'7 faan', desc:'A single suit, nothing else.' },
-  { name:'Small Three Dragons', zh:'小三元', val:'3 faan', desc:'Two dragon pungs + dragon pair.' },
-  { name:'Great Three Dragons', zh:'大三元', val:'8 faan', desc:'Pungs of all three dragons.' },
-  { name:'All Honors', zh:'字一色', val:'10 faan', limit:true, desc:'Only winds and dragons.' },
-  { name:'Thirteen Orphans', zh:'十三么', val:'13 faan', limit:true, desc:'One of every terminal + every honor + pair.' },
-  { name:'Self-Draw', zh:'自摸', val:'+1 faan', desc:'Won on a self-drawn tile.' },
-  { name:'All Concealed', zh:'門前清', val:'+1 faan', desc:'Hand never called pung/chow/kong.' },
-  { name:'Dragon Pung', zh:'番牌', val:'+1 faan ea.', desc:'Each dragon pung adds 1 faan.' },
-  { name:'Seat / Round Wind', zh:'番牌', val:'+1 faan ea.', desc:'Pung of your seat wind or the round wind.' },
-  { name:'Flower of Seat', zh:'花牌', val:'+1 faan', desc:'Flower or season matching your seat (E=1, S=2, W=3, N=4).' },
-];
-
-const FAAN_SG = [
-  { name:'Chicken / Basic Mahjong', zh:'雞胡', val:'0 tai', desc:'A bare 4-sets-and-a-pair with no scoring elements. Most tables disallow it — need 1 tai minimum.' },
-  { name:'All Chow', zh:'平胡', val:'1 tai', desc:'Every set is a chow, non-scoring pair. (4 tai if completely "pure" — no flowers/animals exposed.)' },
-  { name:'All Pong', zh:'對對胡', val:'2 tai', desc:'Every set a pung or kong. Easier to spot mid-hand than HK.' },
-  { name:'Half Color (Mixed)', zh:'混一色', val:'2 tai', desc:'One number suit plus honors only.' },
-  { name:'Half Terminals', zh:'混老頭', val:'2 tai', desc:'Only 1s, 9s, and honors throughout the hand.' },
-  { name:'Full Color (Pure)', zh:'清一色', val:'4 tai', desc:'A single suit, no honors.' },
-  { name:'All Terminals', zh:'清老頭', val:'9 tai', limit:true, desc:'Only 1s and 9s — no middle tiles, no honors.' },
-  { name:'Small Three Dragons', zh:'小三元', val:'2 tai', desc:'Two dragon pungs + dragon pair (the +1 tai dragon-pair counts separately).' },
-  { name:'Great Three Dragons', zh:'大三元', val:'4 tai', desc:'Pungs of all three dragons. The discarder of the third dragon usually pays for everyone.' },
-  { name:'All Honors', zh:'字一色', val:'10 tai', limit:true, desc:'Only winds and dragons. Limit hand.' },
-  { name:'All Winds', zh:'大四喜', val:'limit', limit:true, desc:'Pungs of all four winds + any pair.' },
-  { name:'Thirteen Wonders', zh:'十三么', val:'8 tai', desc:'One of every terminal + every honor + a pair.' },
-  { name:'Self-Draw', zh:'自摸', val:'+1 tai', desc:'Won on a self-drawn tile.' },
-  { name:'Concealed', zh:'門前清', val:'+1 tai', desc:'Hand never called pung/chow/kong.' },
-  { name:'Each Dragon Pung', zh:'番牌', val:'+1 tai ea.', desc:'Each pung of dragons.' },
-  { name:'Seat / Round Wind', zh:'番牌', val:'+1 tai ea.', desc:'Pung of your seat wind or the round wind.' },
-  { name:'Each Animal', zh:'動物', val:'+1 tai ea.', desc:'Each animal tile (cat, rat, rooster, centipede) you hold at the end.' },
-  { name:'All Four Animals', zh:'四動物', val:'limit', limit:true, desc:'Collect all four animals — pay-all limit hand.' },
-  { name:'Matching Flower / Season', zh:'花牌', val:'+1 tai ea.', desc:'Flower or season matching your seat (E=1, S=2, W=3, N=4).' },
-  { name:'Complete Flower Set', zh:'一色花', val:'+1 tai', desc:'All four of either the Flower group or the Season group.' },
-  { name:'Seven Flowers / Seasons', zh:'七花', val:'10 tai', limit:true, desc:'Hold any 7 of the 8 bonus tiles and win on the 8th — instant.' },
-  { name:'Eight Flowers / Seasons', zh:'八花', val:'limit', limit:true, desc:'Hold all 8 bonus tiles — instant win, pay-all.' },
-  { name:'Robbing the Kong', zh:'搶槓', val:'+1 tai', desc:'Win on the tile someone adds to an exposed pung to make a kong.' },
-  { name:'Win on Replacement', zh:'槓上開花', val:'+1 tai', desc:'After calling a kong, win on the replacement tile.' },
-  { name:'Win on Last Tile', zh:'海底撈月', val:'+1 tai', desc:'Win on the final draw from the wall.' },
-];
-
-const FAAN = IS_SG ? FAAN_SG : FAAN_HK;
-
 function initFaan() {
   const host = document.querySelector('#faan-grid');
   if (!host) return;
@@ -806,91 +472,6 @@ function initFaan() {
 /* ============================================================
    06 — Scenarios
    ============================================================ */
-
-const SCENARIOS = [
-  {
-    prompt: 'Is this a winning hand?',
-    hand: ['d1','d2','d3','b4','b5','b6','c7','c8','c9','we','we','we','dr','dr'],
-    options: [
-      { label: 'Yes — it splits cleanly into 4 sets + a pair.', correct: true,
-        explain: `Three chows (1-2-3 dots, 4-5-6 bamboo, 7-8-9 chars), a pung of East, a pair of Red Dragon. The East pung and Red pair both score ${UNIT}.` },
-      { label: 'No — too many tile types.', correct: false,
-        explain: 'A winning hand only needs the shape 4 sets + 1 pair. Suits and honors mix freely.' },
-    ],
-  },
-  {
-    prompt: 'And is this one?',
-    hand: ['d1','d2','d3','b4','b5','b6','c7','c8','c9','we','ws','ww','dr','dr'],
-    options: [
-      { label: 'Yes.', correct: false,
-        explain: 'Look at the winds: East + South + West — three different singles. Honor tiles cannot form a chow, so this leaves three orphan tiles.' },
-      { label: 'No — three lone winds don\'t form a set.', correct: true,
-        explain: 'Right. Honors only combine as pairs, pungs or kongs. Three distinct winds is just three loose tiles.' },
-    ],
-  },
-  {
-    prompt: 'Second turn. You\'ve drawn a 14th tile. Which discard keeps the most options open?',
-    hand: ['d2','d3','d4','b5','b6','b7','c3','c3','c4','c5','dr','dr','wn','f1'],
-    options: [
-      { label: 'Discard the Flower (Plum)', correct: false,
-        explain: 'Trick option — flowers aren\'t discarded. They\'re set aside face-up and you draw a replacement.' },
-      { label: 'Discard the lone North wind', correct: true,
-        explain: 'It\'s isolated, you have just one, and unless North is your seat or the round wind, a pung of it scores nothing extra. Lone honors are the textbook early discard.' },
-      { label: 'Discard a 3 of Characters', correct: false,
-        explain: 'You already have c3-c3-c4-c5 — a pair plus a 4-5. Throwing a 3 of chars breaks both a potential pung and a chow.' },
-      { label: 'Discard a Red Dragon', correct: false,
-        explain: `You have a pair of dragons. Hold them — one more makes a pung worth 1 ${UNIT}, plus Dragon Pung value.` },
-    ],
-  },
-  {
-    prompt: 'The player to your left discards a 5 of Bamboo. Should you call chow?',
-    hand: ['b3','b4','b6','b7','d2','d2','d2','c1','c2','c3','we','we','we','dr'],
-    options: [
-      { label: 'Yes — claim it for b3-b4-b5.', correct: false,
-        explain: `You expose tiles for a 1-${UNIT} chow but forfeit the "All Concealed" +1 ${UNIT}, and the b6-b7 is still floating waiting for b5 or b8.` },
-      { label: 'Yes — claim it for b4-b5-b6.', correct: false,
-        explain: 'Same problem: you reveal tiles, lose the concealed bonus, and still have a stranded b3 and b7.' },
-      { label: 'No — pass and stay concealed.', correct: true,
-        explain: `You already have a pung of 2-dots, pung of East, chow 1-2-3 chars, and floating bamboo + a dragon. Stay closed and aim for a concealed win — much higher ${UNIT}.` },
-    ],
-  },
-  {
-    prompt: 'You\'re tenpai (ready). Which tile completes the hand?',
-    hand: ['d1','d2','d3','d4','d5','d6','d7','d8','d9','b5','b5','b5','c2'],
-    options: [
-      { label: 'c1', correct: false,
-        explain: 'c1 with your single c2 only forms 1-2 — no third tile in hand to extend it.' },
-      { label: 'c2 — pair up the lone Two', correct: true,
-        explain: 'You have three complete dot chows (1-2-3, 4-5-6, 7-8-9), a pung of 5-bamboo, and a lone c2. Pairing c2 finishes the hand. This is a tanki (pair) wait.' },
-      { label: 'c1 or c3', correct: false,
-        explain: 'You only have one 2 of chars and no neighbors. It can only pair up — it can\'t join a chow without partners.' },
-    ],
-  },
-  {
-    prompt: 'Your opponent just won with this hand. Which pattern scores?',
-    hand: ['b1','b2','b3','b4','b5','b6','b7','b8','b9','b3','b3','b3','b5','b5'],
-    options: [
-      { label: 'Pure One Suit + All Pungs', correct: false,
-        explain: 'Look at the sets: 1-2-3, 4-5-6, 7-8-9, 3-3-3, 5-5. Three chows, one pung, a pair — not All Pungs.' },
-      { label: 'Pure One Suit (清一色)', correct: true,
-        explain: `Every tile is bamboo. ${IS_SG ? 'Full Color (清一色) alone is 4 tai — well past the 1-tai minimum.' : 'Pure One Suit alone is 7 faan — well past the 3-faan minimum.'}` },
-      { label: 'Common Hand only', correct: false,
-        explain: 'Common Hand requires the pair to be non-scoring AND all sets to be chows. There\'s a pung here.' },
-    ],
-  },
-  {
-    prompt: 'Last few turns. The player across has called two pungs of dots and is clearly chasing one suit. Which discard is safest?',
-    hand: ['d3','d5','b2','b2','b6','b7','b8','c4','c5','c6','c9','wn','wn','ws'],
-    options: [
-      { label: 'A 3 of Dots', correct: false,
-        explain: 'They\'re collecting dots. Any dot is high-risk feed. Avoid.' },
-      { label: 'The lone South wind', correct: false,
-        explain: 'Honors are often safe — but if South is their seat or the round, you just gave them a pung. No South has been discarded yet to confirm it\'s safe.' },
-      { label: 'A North wind (you already have a pair, and one was discarded earlier)', correct: true,
-        explain: 'A tile already present in the discards is genbutsu — proven safe against most hands. Repeating a wind already thrown is the textbook defensive play.' },
-    ],
-  },
-];
 
 function initScenarios() {
   const host = document.querySelector('#scenario');
@@ -1487,7 +1068,6 @@ function shuffleArr(arr) {
 
 /* Animals and flowers are bonus tiles — they sit on the side and don't enter
    the playable wall. The 136-tile play wall is identical in both rulesets. */
-const PLAYABLE_TILE_IDS = TILES.filter(t => t.group !== 'bonus' && t.group !== 'animal').map(t => t.id);
 
 /* Build a winning hand by randomly assembling 4 sets + a pair, retrying until
    no tile exceeds 4 copies and the validator confirms a win. */
@@ -1609,11 +1189,6 @@ function discardSuggestion(tiles) {
 
 /* Section 07 — drill orchestrator */
 
-const DRILL_STATS = {
-  waits: { right: 0, total: 0 },
-  winornot: { right: 0, total: 0 },
-  discard: { played: 0, matchedSuggestion: 0 },
-};
 
 let drillState = { active: 'waits', current: null };
 
@@ -2401,149 +1976,6 @@ function renderDemoStatus() {
    Section 09 — Phase C: play a round (you vs three AI)
    ============================================================ */
 
-const WIND_TILE = ['we', 'ws', 'ww', 'wn'];
-
-/* Scoring values per ruleset. SG uses tai (lower numbers, lower minimum, 5-tai cap). */
-const SCORE_VALUES = IS_SG ? {
-  thirteen: 8,
-  honors: 10,
-  great3: 4,
-  small3: 2,
-  pure: 4,
-  mixed: 2,
-  allpung: 2,
-  common: 1,
-  selfdraw: 1,
-  concealed: 1,
-  dragonpung: 1,
-  seatwind: 1,
-  roundwind: 1,
-  cap: 5,   // Singapore typical limit
-} : {
-  thirteen: 13,
-  honors: 10,
-  great3: 8,
-  small3: 3,
-  pure: 7,
-  mixed: 3,
-  allpung: 3,
-  common: 1,
-  selfdraw: 1,
-  concealed: 1,
-  dragonpung: 1,
-  seatwind: 1,
-  roundwind: 1,
-  cap: null, // HK doesn't cap by default in this app
-};
-
-const SCORE_UNIT = IS_SG ? 'tai' : 'faan';
-
-const PRIMARY_NAMES = IS_SG ? {
-  honors: 'All Honors',
-  great3: 'Great Three Dragons',
-  pure:   'Full Color (Pure One Suit)',
-  small3: 'Small Three Dragons',
-  mixed:  'Half Color (Mixed One Suit)',
-  allpung:'All Pong',
-  common: 'All Chow',
-} : {
-  honors: 'All Honors',
-  great3: 'Great Three Dragons',
-  pure:   'Pure One Suit',
-  small3: 'Small Three Dragons',
-  mixed:  'Mixed One Suit',
-  allpung:'All Pungs',
-  common: 'Common Hand',
-};
-
-function computeFaan(player, game) {
-  const allTiles = [...player.hand, ...player.melds.flatMap(m => m.tiles)];
-  const patterns = [];
-
-  if (isThirteenOrphans(allTiles)) {
-    patterns.push({ name: 'Thirteen Orphans', zh: '十三么', faan: SCORE_VALUES.thirteen });
-    return finaliseScore(patterns);
-  }
-
-  const d = decomposeWin(allTiles);
-  if (!d) return { patterns: [], total: 0 };
-
-  let chows = 0;
-  const pungTiles = [];
-  for (const s of d.sets) {
-    const k = classifySet(s);
-    if (k === 'chow') chows++;
-    else if (k === 'pung' || k === 'kong') pungTiles.push(s[0]);
-  }
-
-  const suits = new Set();
-  let hasHonor = false;
-  for (const id of allTiles) {
-    const c = tileCode(id);
-    if (c >= 27) hasHonor = true;
-    else suits.add(Math.floor(c / 9));
-  }
-
-  const dragonPungs = pungTiles.filter(id => ['dr','dg','dw'].includes(id));
-  const dragonPair = ['dr','dg','dw'].includes(d.pair[0]);
-  const pairTile = TILE_BY_ID[d.pair[0]];
-  const seatWindId = WIND_TILE[player.seatIdx];
-  const roundWindId = WIND_TILE[0]; // East round in our demo
-
-  let primary = null;
-
-  if (suits.size === 0 && hasHonor) {
-    primary = { name: PRIMARY_NAMES.honors, zh: '字一色', faan: SCORE_VALUES.honors };
-  } else if (dragonPungs.length === 3) {
-    primary = { name: PRIMARY_NAMES.great3, zh: '大三元', faan: SCORE_VALUES.great3 };
-  } else if (suits.size === 1 && !hasHonor) {
-    primary = { name: PRIMARY_NAMES.pure, zh: '清一色', faan: SCORE_VALUES.pure };
-  } else if (dragonPungs.length === 2 && dragonPair) {
-    primary = { name: PRIMARY_NAMES.small3, zh: '小三元', faan: SCORE_VALUES.small3 };
-  } else if (suits.size === 1 && hasHonor) {
-    primary = { name: PRIMARY_NAMES.mixed, zh: '混一色', faan: SCORE_VALUES.mixed };
-  } else if (pungTiles.length === 4) {
-    primary = { name: PRIMARY_NAMES.allpung, zh: '對對胡', faan: SCORE_VALUES.allpung };
-  } else if (chows === 4 && pairTile && !pairTile.isHonor) {
-    const valuePair = ['dr','dg','dw'].includes(d.pair[0]) || d.pair[0] === seatWindId || d.pair[0] === roundWindId;
-    if (!valuePair) primary = { name: PRIMARY_NAMES.common, zh: '平胡', faan: SCORE_VALUES.common };
-  }
-  if (primary) patterns.push(primary);
-
-  if (game.winSource === 'self-draw') patterns.push({ name: 'Self-Draw', zh: '自摸', faan: SCORE_VALUES.selfdraw });
-  if (player.melds.length === 0) patterns.push({ name: 'Concealed', zh: '門前清', faan: SCORE_VALUES.concealed });
-
-  if (!primary || (primary.zh !== '大三元' && primary.zh !== '小三元')) {
-    for (const dp of dragonPungs) {
-      patterns.push({ name: `${TILE_BY_ID[dp].name} Pung`, zh: '番牌', faan: SCORE_VALUES.dragonpung });
-    }
-  }
-
-  if (pungTiles.includes(seatWindId)) {
-    patterns.push({ name: `Seat ${SEAT_NAMES[player.seatIdx]} Pung`, zh: '番牌', faan: SCORE_VALUES.seatwind });
-  }
-  if (seatWindId !== roundWindId && pungTiles.includes(roundWindId)) {
-    patterns.push({ name: 'Round East Pung', zh: '番牌', faan: SCORE_VALUES.roundwind });
-  }
-
-  return finaliseScore(patterns);
-}
-
-function finaliseScore(patterns) {
-  const raw = patterns.reduce((sum, p) => sum + p.faan, 0);
-  // Apply Singapore cap (5 tai). Hands above cap still display patterns but
-  // total is clamped at cap, with an annotation.
-  let total = raw;
-  let capped = false;
-  if (SCORE_VALUES.cap && raw > SCORE_VALUES.cap) {
-    total = SCORE_VALUES.cap;
-    capped = true;
-  }
-  return { patterns, total, raw, capped };
-}
-
-/* ---------- Phase C controller ---------- */
-
 const PLAY = {
   game: null,
   mode: 'idle',          // idle / playing / awaiting-discard / awaiting-call / ended
@@ -2932,7 +2364,7 @@ function renderPlayWinBanner() {
   } else {
     const won = g.winner === PLAY.humanSeat;
     const winner = g.players[g.winner];
-    const score = computeFaan(winner, g);
+    const score = computeFaan(winner, g, RULESET, SEAT_NAMES);
     banner.classList.add(won ? 'is-win' : 'is-loss');
     const winTileName = TILE_BY_ID[g.winTile]?.name || '';
     const headline = won
