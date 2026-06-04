@@ -1,4 +1,10 @@
+import { renderToStaticMarkup } from 'react-dom/server';
 import { SUIT, tilesForRuleset, tileByIdForRuleset, PLAYABLE_TILE_IDS, tileCode, codeToId, handToCounts } from './domain/tiles';
+import { Tile as TileComponent } from './components/tiles/Tile';
+import { TileRow as TileRowComponent } from './components/tiles/TileRow';
+import { Meld as MeldComponent } from './components/tiles/Meld';
+import { TileInfoCard } from './components/tiles/TileInfoCard';
+import { PlayerSeat } from './components/game/PlayerSeat';
 import { canFormSets, isThirteenOrphans, isWinningHand, findWaits, decomposeWin, collectSets, classifySet } from './domain/handValidation';
 import { HANDS, createActions, PRIORITY, createScenarios, DRILL_STATS } from './content';
 import { getFaanCatalog, getScoreValues, computeFaan } from './domain/scoring';
@@ -75,28 +81,17 @@ window.addEventListener('mj-ruleset-change', event => {
    Tile rendering — paper card w/ double frame
    ============================================================ */
 
+function componentToElement(component) {
+  const template = document.createElement('template');
+  template.innerHTML = renderToStaticMarkup(component).trim();
+  return template.content.firstElementChild || document.createTextNode('');
+}
+
 function renderTile(idOrTile, opts = {}) {
   const t = typeof idOrTile === 'string' ? TILE_BY_ID[idOrTile] : idOrTile;
   if (!t) return document.createTextNode('');
-  const el = document.createElement(opts.button === false ? 'span' : 'button');
-  if (el.tagName === 'BUTTON') el.type = 'button';
-  let cls = 'mj-tile mj-tile--' + t.suit;
-  if (t.suit === SUIT.DRAGON) cls += ' mj-tile--dragon-' + t.dragonColor;
-  if (opts.size === 'sm') cls += ' mj-tile--sm';
-  if (opts.size === 'xs') cls += ' mj-tile--xs';
-  if (opts.size === 'lg') cls += ' mj-tile--lg';
-  el.className = cls;
-  el.setAttribute('aria-label', t.name);
-  el.dataset.tileId = t.id;
-  // Winds and dragons are drawn as proper SVG tile faces (the number suits
-  // come from Unicode tile glyphs); everything else uses its glyph.
-  if (t.suit === SUIT.WIND || t.suit === SUIT.DRAGON) {
-    el.innerHTML = honorTileSVG(t);
-  } else {
-    el.innerHTML = `<span class="mj-tile-glyph" aria-hidden="true">${t.glyph}</span>`;
-  }
+  const el = componentToElement(TileComponent({ tile: t, size: opts.size, button: opts.button !== false }));
   if (opts.onClick) el.addEventListener('click', () => opts.onClick(t, el));
-  if (opts.button === false) el.style.cursor = 'default';
   return el;
 }
 
@@ -123,11 +118,7 @@ function honorTileSVG(t) {
 }
 
 function renderTileRow(tileIds, opts = {}) {
-  const wrap = document.createElement('span');
-  wrap.style.display = 'inline-flex';
-  wrap.style.gap = (opts.gap ?? 3) + 'px';
-  tileIds.forEach(id => wrap.appendChild(renderTile(id, { ...opts, button: false })));
-  return wrap;
+  return componentToElement(TileRowComponent({ tileIds, tileById: TILE_BY_ID, size: opts.size, gap: opts.gap ?? 3 }));
 }
 
 
@@ -258,14 +249,8 @@ function showTileInfo(tile, btn) {
   if (btn) btn.classList.add('is-selected');
   const card = document.querySelector('#tile-info');
   if (!card) return;
-  card.innerHTML = `
-    <div class="mj-info-big" id="info-big"></div>
-    <div class="mj-info-zh">${tile.zh}</div>
-    <div class="mj-info-pinyin">${tile.pinyin}</div>
-    <div class="mj-info-en">${tile.name}</div>
-    <div class="mj-info-meta">${describeTileRole(tile)}</div>
-  `;
-  card.querySelector('#info-big').appendChild(renderTile(tile.id, { size: 'lg', button: false }));
+  const nextCard = componentToElement(TileInfoCard({ tile, role: describeTileRole(tile) }));
+  card.replaceChildren(...nextCard.childNodes);
   wrapTermsIn(card);
 }
 
@@ -341,18 +326,7 @@ const MELD_LABELS = {
 };
 
 function renderMeld(tiles, type, opts = {}) {
-  const meld = document.createElement('div');
-  meld.className = 'mj-meld mj-meld-' + type;
-  const tilesEl = document.createElement('div');
-  tilesEl.className = 'mj-meld-tiles';
-  tiles.forEach(id => tilesEl.appendChild(renderTile(id, { size: opts.size || 'sm', button: false })));
-  meld.appendChild(tilesEl);
-  const label = document.createElement('div');
-  label.className = 'mj-meld-label';
-  const info = MELD_LABELS[type] || { en: type, zh: '' };
-  label.innerHTML = `<span>${info.en}</span><span class="mj-meld-label-zh">${info.zh}</span>`;
-  meld.appendChild(label);
-  return meld;
+  return componentToElement(MeldComponent({ tiles, type, tileById: TILE_BY_ID, size: opts.size || 'sm' }));
 }
 
 function renderHandStage(hand) {
@@ -1844,16 +1818,17 @@ function renderDemoIdle() {
     table.innerHTML = '';
     // show empty seats teaser
     for (let i = 0; i < 4; i++) {
-      const seat = document.createElement('div');
-      seat.className = 'mj-demo-seat is-empty';
-      seat.innerHTML = `
-        <div class="mj-demo-seat-head">
-          <span class="mj-demo-seat-wind">${SEAT_NAMES[i]}<span class="mj-demo-seat-zh">${SEAT_ZH[i]}</span></span>
-          <span class="mj-demo-seat-label">${i === 0 ? 'dealer' : ''}</span>
-        </div>
-        <div class="mj-demo-row mj-demo-row-empty">— deal a round to begin —</div>
-      `;
-      table.appendChild(seat);
+      table.appendChild(componentToElement(PlayerSeat({
+        seatIndex: i,
+        name: SEAT_NAMES[i],
+        zh: SEAT_ZH[i],
+        hand: [],
+        discards: [],
+        tileById: TILE_BY_ID,
+        variant: 'demo',
+        isDealer: i === 0,
+        empty: true,
+      })));
     }
   }
   if (cap) cap.innerHTML = 'Press <strong>Deal a round</strong> to begin.';
@@ -1868,53 +1843,20 @@ function renderDemoFull() {
   table.innerHTML = '';
   for (let i = 0; i < 4; i++) {
     const p = g.players[i];
-    const seat = document.createElement('div');
-    seat.className = 'mj-demo-seat';
-    if (i === g.turn && DEMO.mode !== 'ended') seat.classList.add('is-active');
-    if (g.winner === i) seat.classList.add('is-winner');
-
-    const head = document.createElement('div');
-    head.className = 'mj-demo-seat-head';
-    head.innerHTML = `
-      <span class="mj-demo-seat-wind">${SEAT_NAMES[i]}<span class="mj-demo-seat-zh">${SEAT_ZH[i]}</span></span>
-      <span class="mj-demo-seat-label">${p.isDealer ? 'dealer · 莊' : ''}</span>
-    `;
-    seat.appendChild(head);
-
-    // hand row
-    const handRow = document.createElement('div');
-    handRow.className = 'mj-demo-row mj-demo-row-hand';
-    const handTiles = document.createElement('div');
-    handTiles.className = 'mj-demo-tiles';
-    p.hand.forEach(id => handTiles.appendChild(renderTile(id, { size: 'xs', button: false })));
-    // melds appended in-line after concealed
-    p.melds.forEach(m => {
-      const meldGroup = document.createElement('span');
-      meldGroup.className = 'mj-demo-meld mj-meld-' + m.type;
-      m.tiles.forEach(id => meldGroup.appendChild(renderTile(id, { size: 'xs', button: false })));
-      handTiles.appendChild(meldGroup);
-    });
-    handRow.appendChild(handTiles);
-    seat.appendChild(handRow);
-
-    // discard row
-    const discRow = document.createElement('div');
-    discRow.className = 'mj-demo-row mj-demo-row-discards';
-    const discLabel = document.createElement('span');
-    discLabel.className = 'mj-demo-row-label';
-    discLabel.textContent = 'discards';
-    discRow.appendChild(discLabel);
-    const discTiles = document.createElement('div');
-    discTiles.className = 'mj-demo-tiles mj-demo-tiles-discard';
-    p.discards.forEach((id, idx) => {
-      const t = renderTile(id, { size: 'xs', button: false });
-      if (idx === p.discards.length - 1 && g.lastDiscardSeat === i) t.classList.add('is-fresh');
-      discTiles.appendChild(t);
-    });
-    discRow.appendChild(discTiles);
-    seat.appendChild(discRow);
-
-    table.appendChild(seat);
+    table.appendChild(componentToElement(PlayerSeat({
+      seatIndex: i,
+      name: SEAT_NAMES[i],
+      zh: SEAT_ZH[i],
+      hand: p.hand,
+      discards: p.discards,
+      melds: p.melds,
+      tileById: TILE_BY_ID,
+      variant: 'demo',
+      isDealer: p.isDealer,
+      isActive: i === g.turn && DEMO.mode !== 'ended',
+      isWinner: g.winner === i,
+      lastDiscardFresh: g.lastDiscardSeat === i,
+    })));
   }
   renderDemoCaption();
   renderDemoStatus();
@@ -2149,21 +2091,19 @@ function ensurePlayStructure() {
   order.forEach(i => {
     const isYou = (i === PLAY.humanSeat);
     const p = PLAY.game.players[i];
-    const seat = document.createElement('div');
-    seat.className = 'mj-play-seat' + (isYou ? ' is-you' : ' is-opp');
-    seat.dataset.seat = String(i);
-    seat.innerHTML = `
-      <div class="mj-play-seat-head">
-        <span class="mj-play-seat-name">${SEAT_NAMES[i]}<span class="mj-play-seat-zh">${SEAT_ZH[i]}</span></span>
-        <span class="mj-play-seat-meta">${p.isDealer ? 'dealer 莊' : ''}${isYou ? ' · YOU' : ''}</span>
-      </div>
-      <div class="mj-play-hand-wrap"><div class="mj-play-hand-tiles" data-role="hand"></div></div>
-      <div class="mj-play-discards">
-        <span class="mj-play-row-label">${isYou ? 'your discards' : 'discards'}</span>
-        <div class="mj-play-disc-tiles" data-role="discards"></div>
-      </div>
-    `;
-    table.appendChild(seat);
+    table.appendChild(componentToElement(PlayerSeat({
+      seatIndex: i,
+      name: SEAT_NAMES[i],
+      zh: SEAT_ZH[i],
+      hand: [],
+      discards: [],
+      melds: [],
+      tileById: TILE_BY_ID,
+      variant: 'play',
+      isYou,
+      isDealer: p.isDealer,
+      hiddenHand: !isYou,
+    })));
   });
   PLAY.structureBuilt = true;
   // One-time wrap of the static Chinese in seat heads. Dynamic captions are
@@ -2178,60 +2118,44 @@ function updatePlaySeat(seat, i) {
   if (!g) return;
   const p = g.players[i];
   const isYou = (i === PLAY.humanSeat);
+  const actionable = isYou && PLAY.mode === 'awaiting-discard';
+  const justDiscarded = g.lastEvent && g.lastEvent.type === 'discard' && g.lastDiscardSeat === i;
+  const nextSeat = componentToElement(PlayerSeat({
+    seatIndex: i,
+    name: SEAT_NAMES[i],
+    zh: SEAT_ZH[i],
+    hand: p.hand,
+    discards: p.discards,
+    melds: p.melds,
+    tileById: TILE_BY_ID,
+    variant: 'play',
+    isYou,
+    isDealer: p.isDealer,
+    isActive: i === g.turn && PLAY.mode !== 'ended',
+    isWinner: g.winner === i,
+    hiddenHand: !isYou,
+    actionable,
+    lastDiscardFresh: justDiscarded,
+    discardLimit: 36,
+  }));
 
-  seat.classList.toggle('is-active', i === g.turn && PLAY.mode !== 'ended');
-  seat.classList.toggle('is-winner', g.winner === i);
+  seat.className = nextSeat.className;
 
   const handHost = seat.querySelector('[data-role="hand"]');
-  if (handHost) {
-    // Build new children in a fragment, then swap — single reflow.
-    const frag = document.createDocumentFragment();
-    if (isYou) {
-      const actionable = (PLAY.mode === 'awaiting-discard');
-      p.hand.forEach(id => {
-        const t = renderTile(id, {
-          size: 'sm',
-          onClick: () => {
-            if (PLAY.mode === 'awaiting-discard') humanDiscardTile(id);
-          },
-        });
-        if (actionable) t.classList.add('is-actionable');
-        frag.appendChild(t);
+  const nextHandHost = nextSeat.querySelector('[data-role="hand"]');
+  if (handHost && nextHandHost) {
+    handHost.replaceChildren(...nextHandHost.childNodes);
+    if (actionable) {
+      handHost.querySelectorAll('.mj-tile').forEach(tileEl => {
+        tileEl.addEventListener('click', () => humanDiscardTile(tileEl.dataset.tileId));
       });
-    } else {
-      for (let k = 0; k < p.hand.length; k++) {
-        const back = document.createElement('span');
-        back.className = 'mj-tile-back mj-tile--sm';
-        back.setAttribute('aria-label', 'hidden tile');
-        frag.appendChild(back);
-      }
     }
-    if (p.melds.length) {
-      const meldsWrap = document.createElement('span');
-      meldsWrap.className = 'mj-play-melds';
-      p.melds.forEach(m => {
-        const meld = document.createElement('span');
-        meld.className = 'mj-play-meld mj-meld-' + m.type;
-        m.tiles.forEach(id => meld.appendChild(renderTile(id, { size: 'sm', button: false })));
-        meldsWrap.appendChild(meld);
-      });
-      frag.appendChild(meldsWrap);
-    }
-    handHost.replaceChildren(frag);
   }
 
   const discHost = seat.querySelector('[data-role="discards"]');
-  if (discHost) {
-    const frag = document.createDocumentFragment();
-    // Cap display at the last 36 tiles to keep rows bounded even on long rounds.
-    const showFrom = Math.max(0, p.discards.length - 36);
-    const justDiscarded = g.lastEvent && g.lastEvent.type === 'discard' && g.lastDiscardSeat === i;
-    for (let k = showFrom; k < p.discards.length; k++) {
-      const t = renderTile(p.discards[k], { size: 'xs', button: false });
-      if (k === p.discards.length - 1 && justDiscarded) t.classList.add('is-fresh');
-      frag.appendChild(t);
-    }
-    discHost.replaceChildren(frag);
+  const nextDiscHost = nextSeat.querySelector('[data-role="discards"]');
+  if (discHost && nextDiscHost) {
+    discHost.replaceChildren(...nextDiscHost.childNodes);
   }
 }
 

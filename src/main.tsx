@@ -12,3 +12,17 @@ createRoot(document.getElementById('root')!).render(
     </RulesetProvider>
   </React.StrictMode>,
 );
+
+function AppShell() {
+  return null;
+}
+
+const root = document.getElementById('react-root');
+
+if (root) {
+  createRoot(root).render(
+    <React.StrictMode>
+      <AppShell />
+    </React.StrictMode>,
+  );
+}

@@ -12,6 +12,8 @@ declare module 'react' {
   function useMemo<T>(factory: () => T, deps: unknown[]): T;
   function useState<S>(initialState: S | (() => S)): [S, Dispatch<SetStateAction<S>>];
 
+  export type ReactNode = unknown;
+  export type MouseEventHandler<T = Element> = (event: unknown) => void;
   const React: {
     StrictMode: (props: { children?: ReactNode }) => unknown;
   };
@@ -27,6 +29,10 @@ declare module 'react-dom/client' {
   };
 }
 
+declare module 'react-dom/server' {
+  export function renderToStaticMarkup(element: unknown): string;
+}
+
 declare module 'react/jsx-runtime' {
   export const jsx: unknown;
   export const jsxs: unknown;
@@ -34,6 +40,10 @@ declare module 'react/jsx-runtime' {
 }
 
 declare namespace JSX {
+  interface IntrinsicAttributes {
+    key?: unknown;
+  }
+
   interface IntrinsicElements {
     [elemName: string]: any;
   }

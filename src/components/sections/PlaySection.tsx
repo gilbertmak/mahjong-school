@@ -1,3 +1,5 @@
+import { GameTable } from '../game/GameTable';
+
 export function PlaySection() {
   return (
     <section id="section-play" className="mj-section">
@@ -8,7 +10,7 @@ export function PlaySection() {
       </div>
 
       <div className="mj-play">
-        <div className="mj-play-table" id="play-table"></div>
+        <GameTable variant="play" id="play-table" />
         <div className="mj-play-foot">
           <div className="mj-play-action" id="play-action"></div>
           <div className="mj-play-status" id="play-status"></div>
