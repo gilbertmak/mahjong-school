@@ -1,3 +1,5 @@
+import { GameTable } from '../game/GameTable';
+
 export function DemoSection() {
   return (
     <section id="section-demo" className="mj-section">
@@ -23,7 +25,7 @@ export function DemoSection() {
           </label>
         </div>
 
-        <div className="mj-demo-table" id="demo-table"></div>
+        <GameTable variant="demo" id="demo-table" />
 
         <div className="mj-demo-foot">
           <div className="mj-demo-caption" id="demo-caption">Press <strong>Deal a round</strong> to begin.</div>
