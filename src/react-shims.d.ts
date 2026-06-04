@@ -1,9 +1,25 @@
 declare module 'react' {
+  type ReactNode = unknown;
+
+  type Dispatch<A> = (value: A) => void;
+  type SetStateAction<S> = S | ((prevState: S) => S);
+
+  function createContext<T>(defaultValue: T): {
+    Provider: (props: { value: T; children?: ReactNode }) => unknown;
+  };
+  function useCallback<T extends (...args: any[]) => any>(callback: T, deps: unknown[]): T;
+  function useContext<T>(context: { Provider: unknown }): T;
+  function useMemo<T>(factory: () => T, deps: unknown[]): T;
+  function useState<S>(initialState: S | (() => S)): [S, Dispatch<SetStateAction<S>>];
+
   export type ReactNode = unknown;
   export type MouseEventHandler<T = Element> = (event: unknown) => void;
   const React: {
-    StrictMode: (props: { children?: unknown }) => unknown;
+    StrictMode: (props: { children?: ReactNode }) => unknown;
   };
+
+  export { createContext, useCallback, useContext, useMemo, useState };
+  export type { ReactNode };
   export default React;
 }
 

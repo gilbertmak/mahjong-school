@@ -1,4 +1,8 @@
+import { useRulesetCopy } from '../../state/RulesetContext';
+
 export function WinningHandSection() {
+  const copy = useRulesetCopy();
+
   return (
     <section id="section-win" className="mj-section">
       <div className="mj-section-head">
@@ -6,7 +10,7 @@ export function WinningHandSection() {
         <h2 className="mj-h2">How do you <em>win</em>?</h2>
         <p className="mj-lede">A finished hand is fourteen tiles split into <strong>four sets and a single pair</strong>.
           A set is either a run of three in one suit (a chow), three of a kind (a pung), or four (a kong).
-          And before you can call it, the hand has to be worth at least <strong><span data-rs="min">3</span> <span data-rs="unit">faan</span></strong>
+          And before you can call it, the hand has to be worth at least <strong><span>{copy.min}</span> <span>{copy.unit}</span></strong>
           from the patterns below — so they&apos;re worth learning.</p>
       </div>
 
