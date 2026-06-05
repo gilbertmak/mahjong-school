@@ -8,6 +8,8 @@ import { PlayerSeat } from './components/game/PlayerSeat';
 import { canFormSets, isThirteenOrphans, isWinningHand, findWaits, decomposeWin, collectSets, classifySet } from './domain/handValidation';
 import { HANDS, createActions, PRIORITY, createScenarios, DRILL_STATS } from './content';
 import { getFaanCatalog, getScoreValues, computeFaan } from './domain/scoring';
+import { createDemoInitialState, demoReducer, shouldScheduleDemo } from './state/demoReducer';
+import { createPlayInitialState, playReducer, shouldSchedulePlay } from './state/playReducer';
 
 'use strict';
 
@@ -1510,7 +1512,6 @@ const SEAT_NAMES = ['East', 'South', 'West', 'North'];
 const SEAT_ZH    = ['東', '南', '西', '北'];
 const DEAD_WALL = 14; // tiles reserved for replacements (not strictly used here, but reserved)
 
-const isSuitTileId = id => /^[dbc]\d$/.test(id);
 
 function makeWall() {
   const tiles = [];
@@ -1539,13 +1540,6 @@ function makePlayer(seatIdx) {
   };
 }
 
-/* Treat melds as plain triplets for win validation (no kongs in Phase B). */
-function flatHandForWin(player) {
-  const flat = [...player.hand];
-  for (const m of player.melds) flat.push(...m.tiles);
-  return flat;
-}
-
 function newDemoGame() {
   const wall = makeWall();
   const players = [0, 1, 2, 3].map(makePlayer);
@@ -1569,150 +1563,27 @@ function newDemoGame() {
   };
 }
 
-function checkChowOptions(handIds, discardId) {
-  if (!isSuitTileId(discardId)) return [];
-  const prefix = discardId[0];
-  const v = parseInt(discardId.slice(1), 10);
-  const has = id => handIds.includes(id);
-  const options = [];
-  if (v >= 3 && has(prefix+(v-2)) && has(prefix+(v-1))) options.push([prefix+(v-2), prefix+(v-1), discardId]);
-  if (v >= 2 && v <= 8 && has(prefix+(v-1)) && has(prefix+(v+1))) options.push([prefix+(v-1), discardId, prefix+(v+1)]);
-  if (v <= 7 && has(prefix+(v+1)) && has(prefix+(v+2))) options.push([discardId, prefix+(v+1), prefix+(v+2)]);
-  return options;
-}
-
-/* Decide the best call response to the current discard.
-   Priority: win > pung > chow. Equal priority — prefer the player
-   closest to the discarder in turn order (offset 1 = next seat). */
-function findBestCall(game) {
-  const discard = game.lastDiscard;
-  const fromSeat = game.lastDiscardSeat;
-  let best = null;
-  const better = c => !best || c.priority < best.priority ||
-    (c.priority === best.priority && c.turnOrder < best.turnOrder);
-
-  for (let offset = 1; offset <= 3; offset++) {
-    const i = (fromSeat + offset) % 4;
-    const p = game.players[i];
-
-    const winFlat = [...flatHandForWin(p), discard];
-    if (winFlat.length === 14 && isWinningHand(winFlat)) {
-      const c = { player: i, kind: 'win', priority: 1, turnOrder: offset, tiles: [discard] };
-      if (better(c)) best = c;
-    }
-    if (p.hand.filter(t => t === discard).length >= 2) {
-      const c = { player: i, kind: 'pung', priority: 2, turnOrder: offset, tiles: [discard, discard, discard] };
-      if (better(c)) best = c;
-    }
-    if (offset === 1) {
-      const opts = checkChowOptions(p.hand, discard);
-      if (opts.length > 0) {
-        const c = { player: i, kind: 'chow', priority: 3, turnOrder: offset, tiles: opts[0] };
-        if (better(c)) best = c;
-      }
-    }
-  }
-  return best;
-}
-
-/* Execute a call against the current game state. Mutates game and sets lastEvent. */
-function executeCall(game, call) {
-  const p = game.players[call.player];
-  if (call.kind === 'win') {
-    game.phase = 'end';
-    game.winner = call.player;
-    game.winSource = 'discard';
-    // Restore the discard pile (we don't remove the called tile from the discarder's pile on a win)
-    game.lastEvent = { type: 'win', player: call.player, tile: game.lastDiscard, source: 'discard', from: game.lastDiscardSeat };
-    return;
-  }
-  const tilesNeeded = call.kind === 'pung'
-    ? [game.lastDiscard, game.lastDiscard]
-    : call.tiles.filter(t => t !== game.lastDiscard);
-  for (const need of tilesNeeded) {
-    const idx = p.hand.indexOf(need);
-    if (idx >= 0) p.hand.splice(idx, 1);
-  }
-  p.melds.push({ type: call.kind, tiles: call.tiles.slice(), from: game.lastDiscardSeat });
-  game.players[game.lastDiscardSeat].discards.pop();
-  game.turn = call.player;
-  game.phase = 'discard';
-  game.lastEvent = { type: 'call', player: call.player, kind: call.kind, tiles: call.tiles, fromSeat: game.lastDiscardSeat, tile: game.lastDiscard };
-}
-
-/* Advance the game by exactly one event.
-   `humanSeat` (default -1 = no human) pauses the engine via 'awaiting-*' events
-   when it would be the human's turn to discard or call. */
-function stepGame(game, humanSeat = -1) {
-  if (game.phase === 'end') return null;
-  if (game.phase === 'draw') {
-    const t = drawFromWall(game.wall);
-    if (t === null) {
-      game.phase = 'end';
-      game.lastEvent = { type: 'exhausted' };
-      return game.lastEvent;
-    }
-    const p = game.players[game.turn];
-    p.hand.push(t);
-    p.hand = sortHand(p.hand);
-    if (isWinningHand(flatHandForWin(p))) {
-      game.phase = 'end';
-      game.winner = game.turn;
-      game.winSource = 'self-draw';
-      game.winTile = t;
-      game.lastEvent = { type: 'win', player: game.turn, tile: t, source: 'self-draw' };
-      return game.lastEvent;
-    }
-    game.phase = 'discard';
-    game.lastEvent = { type: 'draw', player: game.turn, tile: t };
-    return game.lastEvent;
-  }
-  if (game.phase === 'east-discard' || game.phase === 'discard') {
-    if (game.turn === humanSeat) {
-      return { type: 'awaiting-discard', player: humanSeat };
-    }
-    const p = game.players[game.turn];
-    if (p.hand.length === 0) {
-      game.phase = 'end';
-      game.lastEvent = { type: 'exhausted' };
-      return game.lastEvent;
-    }
-    const sugg = discardSuggestion(p.hand);
-    const idx = p.hand.indexOf(sugg.id);
-    p.hand.splice(idx, 1);
-    p.discards.push(sugg.id);
-    game.lastDiscard = sugg.id;
-    game.lastDiscardSeat = game.turn;
-    game.phase = 'call';
-    game.lastEvent = { type: 'discard', player: game.turn, tile: sugg.id, reason: sugg.reason };
-    return game.lastEvent;
-  }
-  if (game.phase === 'call') {
-    const call = findBestCall(game);
-    if (call && call.player === humanSeat) {
-      return { type: 'awaiting-call', player: humanSeat, call };
-    }
-    if (call) {
-      executeCall(game, call);
-      if (call.kind === 'win') game.winTile = game.lastDiscard;
-      return game.lastEvent;
-    }
-    game.turn = (game.turn + 1) % 4;
-    game.phase = 'draw';
-    game.lastEvent = { type: 'pass' };
-    return game.lastEvent;
-  }
-  return null;
+function roundTransitionDeps() {
+  return {
+    drawFromWall,
+    sortHand,
+    discardSuggestion,
+    isWinningHand,
+  };
 }
 
 /* ---------- Demo controller ---------- */
 
-const DEMO = {
-  game: null,
-  mode: 'idle',    // 'idle' | 'playing' | 'paused' | 'ended'
-  speedMs: 700,
-  timer: null,
-};
+let DEMO = createDemoInitialState();
+let demoTimer = null;
+
+function dispatchDemo(action) {
+  DEMO = demoReducer(DEMO, action);
+}
+
+function clearDemoTimer() {
+  if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+}
 
 function initDemo() {
   const table = document.querySelector('#demo-table');
@@ -1720,8 +1591,8 @@ function initDemo() {
   document.querySelectorAll('[data-demo]').forEach(el => {
     const action = el.dataset.demo;
     if (action === 'speed') {
-      el.addEventListener('change', () => { DEMO.speedMs = parseInt(el.value, 10) || 700; });
-      DEMO.speedMs = parseInt(el.value, 10) || 700;
+      el.addEventListener('change', () => { dispatchDemo({ type: 'set-speed', speedMs: parseInt(el.value, 10) || 700 }); });
+      dispatchDemo({ type: 'set-speed', speedMs: parseInt(el.value, 10) || 700 });
       return;
     }
     el.addEventListener('click', () => demoAction(action));
@@ -1731,64 +1602,46 @@ function initDemo() {
 
 function demoAction(action) {
   if (action === 'play') {
-    if (DEMO.mode === 'idle' || DEMO.mode === 'ended') {
-      DEMO.game = newDemoGame();
-      DEMO.mode = 'playing';
-      renderDemoFull();
-      scheduleNextStep();
-    } else if (DEMO.mode === 'paused') {
-      DEMO.mode = 'playing';
-      updateButtons();
-      scheduleNextStep();
-    }
+    dispatchDemo({ type: 'play', game: (DEMO.mode === 'idle' || DEMO.mode === 'ended') ? newDemoGame() : undefined });
+    if (DEMO.game) renderDemoFull();
+    updateButtons();
+    scheduleNextStep();
   } else if (action === 'pause') {
     pauseDemo();
   } else if (action === 'step') {
-    if (DEMO.mode === 'idle' || DEMO.mode === 'ended') {
-      DEMO.game = newDemoGame();
-      DEMO.mode = 'paused';
-      renderDemoFull();
-    } else {
-      pauseDemo();
-      runOneStep();
-    }
+    clearDemoTimer();
+    const wasNewRound = DEMO.mode === 'idle' || DEMO.mode === 'ended';
+    dispatchDemo({ type: 'step', game: wasNewRound ? newDemoGame() : undefined, deps: roundTransitionDeps(), pause: true });
+    renderDemoFull();
+    updateButtons();
   } else if (action === 'restart') {
-    pauseDemo();
-    DEMO.game = null;
-    DEMO.mode = 'idle';
+    clearDemoTimer();
+    dispatchDemo({ type: 'restart' });
     renderDemoIdle();
   }
 }
 
 function pauseDemo() {
-  if (DEMO.timer) { clearTimeout(DEMO.timer); DEMO.timer = null; }
-  if (DEMO.mode === 'playing') DEMO.mode = 'paused';
+  clearDemoTimer();
+  dispatchDemo({ type: 'pause' });
   updateButtons();
 }
 
 function scheduleNextStep() {
-  if (DEMO.timer) clearTimeout(DEMO.timer);
-  DEMO.timer = setTimeout(() => {
-    if (DEMO.mode !== 'playing') return;
+  clearDemoTimer();
+  if (!shouldScheduleDemo(DEMO)) return;
+  demoTimer = setTimeout(() => {
+    if (!shouldScheduleDemo(DEMO)) return;
     runOneStep();
-    if (DEMO.mode === 'playing') scheduleNextStep();
+    scheduleNextStep();
   }, DEMO.speedMs);
 }
 
 function runOneStep() {
-  const ev = stepGame(DEMO.game);
-  if (!ev) return;
-  // Skip "pass" events visually — immediately recurse one more step
-  if (ev.type === 'pass') {
-    runOneStep();
-    return;
-  }
+  dispatchDemo({ type: 'step', deps: roundTransitionDeps() });
   renderDemoFull();
-  if (ev.type === 'win' || ev.type === 'exhausted') {
-    DEMO.mode = 'ended';
-    if (DEMO.timer) { clearTimeout(DEMO.timer); DEMO.timer = null; }
-    updateButtons();
-  }
+  if (!shouldScheduleDemo(DEMO)) clearDemoTimer();
+  updateButtons();
 }
 
 function updateButtons() {
@@ -1912,18 +1765,16 @@ function renderDemoStatus() {
    Section 09 — Phase C: play a round (you vs three AI)
    ============================================================ */
 
-const PLAY = {
-  game: null,
-  mode: 'idle',          // idle / playing / awaiting-discard / awaiting-call / ended
-  speedMs: 500,
-  timer: null,
-  pendingCall: null,
-  humanSeat: 0,
-  structureBuilt: false, // structural DOM is built once per game
-  eventCount: 0,         // safety counter against runaway rounds
-  maxEvents: 280,
-  stepping: false,       // re-entrancy guard for runPlayStep
-};
+let PLAY = createPlayInitialState();
+let playTimer = null;
+
+function dispatchPlay(action) {
+  PLAY = playReducer(PLAY, action);
+}
+
+function clearPlayTimer() {
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+}
 
 function initPlay() {
   const table = document.querySelector('#play-table');
@@ -1931,8 +1782,8 @@ function initPlay() {
   document.querySelectorAll('[data-play]').forEach(el => {
     const action = el.dataset.play;
     if (action === 'speed') {
-      el.addEventListener('change', () => { PLAY.speedMs = parseInt(el.value, 10) || 600; });
-      PLAY.speedMs = parseInt(el.value, 10) || 600;
+      el.addEventListener('change', () => { dispatchPlay({ type: 'set-speed', speedMs: parseInt(el.value, 10) || 600 }); });
+      dispatchPlay({ type: 'set-speed', speedMs: parseInt(el.value, 10) || 600 });
       return;
     }
     el.addEventListener('click', () => playAction(action));
@@ -1942,120 +1793,43 @@ function initPlay() {
 
 function playAction(action) {
   if (action === 'start' || action === 'newround') {
-    if (PLAY.timer) { clearTimeout(PLAY.timer); PLAY.timer = null; }
-    PLAY.game = newDemoGame();
-    PLAY.mode = 'playing';
-    PLAY.pendingCall = null;
-    PLAY.eventCount = 0;
-    PLAY.structureBuilt = false; // force rebuild on new game
+    clearPlayTimer();
+    dispatchPlay({ type: 'start', game: newDemoGame() });
     renderPlayFull();
     schedulePlayStep();
   } else if (action === 'resign') {
-    if (PLAY.timer) { clearTimeout(PLAY.timer); PLAY.timer = null; }
-    PLAY.game = null;
-    PLAY.mode = 'idle';
-    PLAY.pendingCall = null;
-    PLAY.structureBuilt = false;
+    clearPlayTimer();
+    dispatchPlay({ type: 'resign' });
     renderPlayIdle();
   }
 }
 
 function schedulePlayStep() {
-  if (PLAY.timer) clearTimeout(PLAY.timer);
-  PLAY.timer = setTimeout(runPlayStep, PLAY.speedMs);
+  clearPlayTimer();
+  if (!shouldSchedulePlay(PLAY)) return;
+  playTimer = setTimeout(runPlayStep, PLAY.speedMs);
 }
 
-/* Advance the engine one event. Robust against:
-   - re-entrancy (multiple timers firing on top of each other)
-   - runaway rounds (hard cap on total events)
-   - chains of 'pass' events (iterative drain, no recursion stack growth) */
 function runPlayStep() {
-  if (PLAY.mode !== 'playing') return;
-  if (PLAY.stepping) return;
-  PLAY.stepping = true;
-  try {
-    // Drain consecutive 'pass' events iteratively. In practice no two passes
-    // chain (a pass advances to a draw), but the iterative form is safer.
-    let ev = null;
-    let drains = 0;
-    while (true) {
-      if (++PLAY.eventCount > PLAY.maxEvents) {
-        if (PLAY.game) {
-          PLAY.game.phase = 'end';
-          PLAY.game.lastEvent = { type: 'exhausted' };
-        }
-        PLAY.mode = 'ended';
-        renderPlayFull();
-        return;
-      }
-      ev = stepGame(PLAY.game, PLAY.humanSeat);
-      if (!ev) return;
-      if (ev.type !== 'pass') break;
-      if (++drains > 8) break; // belt-and-braces against pathological loops
-    }
-
-    if (ev.type === 'awaiting-discard') {
-      PLAY.mode = 'awaiting-discard';
-      renderPlayFull();
-      return;
-    }
-    if (ev.type === 'awaiting-call') {
-      PLAY.mode = 'awaiting-call';
-      PLAY.pendingCall = ev.call;
-      renderPlayFull();
-      return;
-    }
-    renderPlayFull();
-    if (ev.type === 'win' || ev.type === 'exhausted') {
-      PLAY.mode = 'ended';
-      return;
-    }
-    schedulePlayStep();
-  } finally {
-    PLAY.stepping = false;
-  }
+  if (!shouldSchedulePlay(PLAY)) return;
+  dispatchPlay({ type: 'tick', deps: roundTransitionDeps() });
+  renderPlayFull();
+  schedulePlayStep();
 }
 
 function humanDiscardTile(tileId) {
-  if (PLAY.mode !== 'awaiting-discard') return;
-  const g = PLAY.game;
-  const p = g.players[PLAY.humanSeat];
-  const idx = p.hand.indexOf(tileId);
-  if (idx < 0) return;
-  p.hand.splice(idx, 1);
-  p.discards.push(tileId);
-  g.lastDiscard = tileId;
-  g.lastDiscardSeat = PLAY.humanSeat;
-  g.phase = 'call';
-  g.lastEvent = { type: 'discard', player: PLAY.humanSeat, tile: tileId, reason: 'You discarded this.' };
-  PLAY.mode = 'playing';
+  dispatchPlay({ type: 'human-discard', tileId });
   renderPlayFull();
   schedulePlayStep();
 }
 
 function humanAcceptCall() {
-  if (PLAY.mode !== 'awaiting-call' || !PLAY.pendingCall) return;
-  const g = PLAY.game;
-  executeCall(g, PLAY.pendingCall);
-  if (PLAY.pendingCall.kind === 'win') g.winTile = g.lastDiscard;
-  PLAY.pendingCall = null;
-  if (g.phase === 'end') {
-    PLAY.mode = 'ended';
-    renderPlayFull();
-    return;
-  }
-  PLAY.mode = 'awaiting-discard'; // caller (you) must discard now
+  dispatchPlay({ type: 'human-accept-call' });
   renderPlayFull();
 }
 
 function humanDeclineCall() {
-  if (PLAY.mode !== 'awaiting-call') return;
-  const g = PLAY.game;
-  g.turn = (g.lastDiscardSeat + 1) % 4;
-  g.phase = 'draw';
-  g.lastEvent = { type: 'pass' };
-  PLAY.pendingCall = null;
-  PLAY.mode = 'playing';
+  dispatchPlay({ type: 'human-decline-call' });
   renderPlayFull();
   schedulePlayStep();
 }
@@ -2105,7 +1879,7 @@ function ensurePlayStructure() {
       hiddenHand: !isYou,
     })));
   });
-  PLAY.structureBuilt = true;
+  dispatchPlay({ type: 'structure-built' });
   // One-time wrap of the static Chinese in seat heads. Dynamic captions are
   // handled by wrapTermsIn(bar) inside renderPlayActionBar.
   wrapTermsIn(table);
@@ -2325,16 +2099,12 @@ function refreshRulesetViews() {
   initFaan();
   initScenarios();
 
-  if (DEMO.timer) { clearTimeout(DEMO.timer); DEMO.timer = null; }
-  DEMO.game = null;
-  DEMO.mode = 'idle';
+  clearDemoTimer();
+  DEMO = createDemoInitialState({ speedMs: DEMO.speedMs });
   renderDemoIdle();
 
-  if (PLAY.timer) { clearTimeout(PLAY.timer); PLAY.timer = null; }
-  PLAY.game = null;
-  PLAY.mode = 'idle';
-  PLAY.pendingCall = null;
-  PLAY.structureBuilt = false;
+  clearPlayTimer();
+  PLAY = createPlayInitialState({ speedMs: PLAY.speedMs });
   renderPlayIdle();
 
   wrapTermsIn(document.body);
