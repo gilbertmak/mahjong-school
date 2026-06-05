@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import './style.css';
+import './styles/global.css';
 import './app.js';
 import { App } from './App';
 import { RulesetProvider } from './state/RulesetContext';
