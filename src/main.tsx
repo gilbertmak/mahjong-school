@@ -5,24 +5,16 @@ import './app.js';
 import { App } from './App';
 import { RulesetProvider } from './state/RulesetContext';
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error('Root element #root was not found.');
+}
+
+createRoot(rootElement).render(
   <React.StrictMode>
     <RulesetProvider>
       <App />
     </RulesetProvider>
   </React.StrictMode>,
 );
-
-function AppShell() {
-  return null;
-}
-
-const root = document.getElementById('react-root');
-
-if (root) {
-  createRoot(root).render(
-    <React.StrictMode>
-      <AppShell />
-    </React.StrictMode>,
-  );
-}
