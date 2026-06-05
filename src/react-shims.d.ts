@@ -9,6 +9,7 @@ declare module 'react' {
   };
   function useCallback<T extends (...args: any[]) => any>(callback: T, deps: unknown[]): T;
   function useContext<T>(context: { Provider: unknown }): T;
+  function useEffect(effect: () => void | (() => void), deps?: unknown[]): void;
   function useMemo<T>(factory: () => T, deps: unknown[]): T;
   function useState<S>(initialState: S | (() => S)): [S, Dispatch<SetStateAction<S>>];
 
@@ -18,7 +19,7 @@ declare module 'react' {
     StrictMode: (props: { children?: ReactNode }) => unknown;
   };
 
-  export { createContext, useCallback, useContext, useMemo, useState };
+  export { createContext, useCallback, useContext, useEffect, useMemo, useState };
   export type { ReactNode };
   export default React;
 }

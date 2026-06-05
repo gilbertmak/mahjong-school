@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/global.css';
-import './app.js';
+import { initMahjongRuntime } from './app.js';
 import { App } from './App';
 import { RulesetProvider } from './state/RulesetContext';
+
+function RuntimeBoot() {
+  useEffect(() => {
+    initMahjongRuntime();
+  }, []);
+
+  return null;
+}
 
 const rootElement = document.getElementById('root');
 
@@ -15,6 +23,7 @@ createRoot(rootElement).render(
   <React.StrictMode>
     <RulesetProvider>
       <App />
+      <RuntimeBoot />
     </RulesetProvider>
   </React.StrictMode>,
 );
