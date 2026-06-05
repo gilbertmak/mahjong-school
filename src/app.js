@@ -2122,7 +2122,12 @@ function selfTest() {
   console.assert(w.length === 1 && w[0] === 'c2', 'pair wait: ' + JSON.stringify(w));
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+let runtimeBooted = false;
+
+export function initMahjongRuntime() {
+  if (runtimeBooted) return;
+  runtimeBooted = true;
+
   initNav();
   initTileExplorer();
   initHands();
@@ -2137,4 +2142,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wrap Chinese terms in tooltip spans AFTER all dynamic content has rendered.
   wrapTermsIn(document.body);
   selfTest();
-});
+}
