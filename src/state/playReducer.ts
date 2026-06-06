@@ -80,7 +80,7 @@ export function checkChowOptions(handIds: string[], discardId: string): string[]
 }
 
 /* Decide the best call response to the current discard.
-   Priority: win > pung > chow. Equal priority — prefer the player
+   Priority: win > pung > chow. Equal priority, prefer the player
    closest to the discarder in turn order (offset 1 = next seat). */
 export function findBestCall(game: any, deps: Pick<RoundTransitionDeps, 'isWinningHand'>): any {
   const discard = game.lastDiscard;

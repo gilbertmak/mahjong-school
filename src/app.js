@@ -14,7 +14,7 @@ import { createPlayInitialState, playReducer, shouldSchedulePlay } from './state
 'use strict';
 
 /* ============================================================
-   Ruleset bootstrap — switches between Hong Kong Old Style and Singapore
+   Ruleset bootstrap, switches between Hong Kong Old Style and Singapore
    ============================================================ */
 
 const VALID_RULESETS = ['hk', 'sg'];
@@ -75,12 +75,12 @@ window.addEventListener('mj-ruleset-change', event => {
 });
 
 /* ============================================================
-   Tile data — HKOS standard + Singapore animals when ruleset = sg
+   Tile data, HKOS standard + Singapore animals when ruleset = sg
    ============================================================ */
 
 
 /* ============================================================
-   Tile rendering — paper card w/ double frame
+   Tile rendering, paper card w/ double frame
    ============================================================ */
 
 function componentToElement(component) {
@@ -100,13 +100,13 @@ function renderTile(idOrTile, opts = {}) {
 /* A clean, engraved SVG tile face for the honour tiles (winds + dragons).
    Ivory face + soft top highlight + the character carved in bold, in its
    traditional colour. Fills the .mj-tile container, which supplies the
-   shared drop-shadow — so honours read as real tiles, like the number suits. */
+   shared drop-shadow, so honours read as real tiles, like the number suits. */
 const SVG_CJK_FONT = "'Songti SC','Source Han Serif SC','Noto Serif CJK SC','SimSun','Songti TC','MingLiU',serif";
 const HONOR_INK = {
-  we: '#23302c', ws: '#23302c', ww: '#23302c', wn: '#23302c',  // winds — ink
+  we: '#23302c', ws: '#23302c', ww: '#23302c', wn: '#23302c',  // winds, ink
   dr: '#b23a2c',  // red dragon
   dg: '#2f6e54',  // green dragon
-  dw: '#3f6075',  // white dragon — slate blue (nods to the classic blue frame)
+  dw: '#3f6075',  // white dragon, slate blue (nods to the classic blue frame)
 };
 function honorTileSVG(t) {
   const fill = HONOR_INK[t.id] || '#23302c';
@@ -126,7 +126,7 @@ function renderTileRow(tileIds, opts = {}) {
 
 /* ============================================================
    Sidenav active highlight + mobile menu
-   (Single theme — no theme switcher. Ruleset switching lives in
+   (Single theme, no theme switcher. Ruleset switching lives in
    the React ruleset context in src/state/RulesetContext.tsx.)
    ============================================================ */
 
@@ -173,16 +173,16 @@ function updateMenuBtn(label) {
 }
 
 /* ============================================================
-   01 — Tile explorer (suit rows + sticky info card + pills filter)
+   01, Tile explorer (suit rows + sticky info card + pills filter)
    ============================================================ */
 
 const SUIT_META = {
   [SUIT.DOTS]:    { title:'Dots',       zh:'筒 · tǒng',     desc:'Rings of dots that you simply count, one through nine. They run and pair up just like the other two number suits.', count:'9 unique · 4 of each · 36 total' },
-  [SUIT.BAM]:     { title:'Bamboo',     zh:'條 · tiáo',     desc:'Bundles of bamboo sticks. The lone "1" is drawn as a bird — odd at first, but it makes the tile impossible to mistake.', count:'9 unique · 4 of each · 36 total' },
+  [SUIT.BAM]:     { title:'Bamboo',     zh:'條 · tiáo',     desc:'Bundles of bamboo sticks. The lone "1" is drawn as a bird, odd at first, but it makes the tile impossible to mistake.', count:'9 unique · 4 of each · 36 total' },
   [SUIT.CHAR]:    { title:'Characters', zh:'萬 · wàn',      desc:'A number stacked over 萬, meaning ten-thousand. The wordiest suit, so it pays to get friendly with one through nine early.', count:'9 unique · 4 of each · 36 total' },
   [SUIT.WIND]:    { title:'Winds',      zh:'風 · fēng',     desc:'East, South, West and North. A triplet of your own seat-wind or the table\'s round-wind earns points; on their own they never make a run.', count:'4 unique · 4 of each · 16 total' },
-  [SUIT.DRAGON]:  { title:'Dragons',    zh:'箭 · jiàn',     desc:'Red 中, Green 發 and White 白. Collect three of any one for a scoring triplet — gather all three triplets and you have the famous Great Dragons.', count:'3 unique · 4 of each · 12 total' },
-  [SUIT.FLOWER]:  { title:'Flowers',    zh:'花 · huā',      desc:'Plum, Orchid, Chrysanthemum and Bamboo. You never play these — draw one, lay it aside, take a replacement, and pocket a little bonus.', count:'4 unique · 1 of each · 4 total' },
+  [SUIT.DRAGON]:  { title:'Dragons',    zh:'箭 · jiàn',     desc:'Red 中, Green 發 and White 白. Collect three of any one for a scoring triplet, gather all three triplets and you have the famous Great Dragons.', count:'3 unique · 4 of each · 12 total' },
+  [SUIT.FLOWER]:  { title:'Flowers',    zh:'花 · huā',      desc:'Plum, Orchid, Chrysanthemum and Bamboo. You never play these. Draw one, lay it aside, take a replacement, and pocket a little bonus.', count:'4 unique · 1 of each · 4 total' },
   [SUIT.SEASON]:  { title:'Seasons',    zh:'季 · jì',       desc:'Spring, Summer, Autumn and Winter, tied to the seats (E, S, W, N in turn). The one matching your seat is worth a touch more.', count:'4 unique · 1 of each · 4 total' },
   [SUIT.ANIMAL]:  { title:'Animals',    zh:'動物 · dòngwù', desc:'A Singapore extra: Cat 貓, Rat 鼠, Rooster 雞 and Centipede 蜈蚣. Any animal you hold is worth 1 tai, and catching both halves of a hunter-and-hunted pair (cat–rat or rooster–centipede) pays out on the spot.', count:'4 unique · 1 of each · 4 total' },
 };
@@ -259,20 +259,20 @@ function showTileInfo(tile, btn) {
 function describeTileRole(t) {
   const unit = IS_SG ? 'tai' : 'faan';
   if (t.isAnimal) {
-    return `Singapore animal tile. Each animal you hold at the end of a round is worth 1 ${unit}. It pairs with ${t.pairWith === 'mouse' ? 'the Rat' : t.pairWith === 'cat' ? 'the Cat' : t.pairWith === 'centipede' ? 'the Centipede' : 'the Rooster'} — when one player holds both halves of a predator-prey pair, an immediate payout triggers from the others.`;
+    return `Singapore animal tile. Each animal you hold at the end of a round is worth 1 ${unit}. It pairs with ${t.pairWith === 'mouse' ? 'the Rat' : t.pairWith === 'cat' ? 'the Cat' : t.pairWith === 'centipede' ? 'the Centipede' : 'the Rooster'}. When one player holds both halves of a predator-prey pair, an immediate payout triggers from the others.`;
   }
-  if (t.isBonus) return 'A bonus tile — it never joins your hand. Draw it, flip it face-up to one side, pull a replacement from the dead wall, and collect a few points at the end.';
-  if (t.suit === SUIT.WIND) return `An honour tile. Three of your seat-wind or of the round-wind is worth 1 ${unit} apiece — line up both for 2. It can never sit in a run.`;
+  if (t.isBonus) return 'A bonus tile. It never joins your hand. Draw it, flip it face-up to one side, pull a replacement from the dead wall, and collect a few points at the end.';
+  if (t.suit === SUIT.WIND) return `An honour tile. Three of your seat-wind or of the round-wind is worth 1 ${unit} apiece. Line up both for 2. It can never sit in a run.`;
   if (t.suit === SUIT.DRAGON) return `An honour tile. Any dragon triplet is worth 1 ${unit}; land all three and you've hit the storied Great Three Dragons. Dragons never form runs.`;
-  if (t.isTerminal) return 'A terminal — a 1 or a 9. It can only join a run from one side, but it\'s prized in special hands like the Thirteen Orphans.';
+  if (t.isTerminal) return 'A terminal: a 1 or a 9. It can only join a run from one side, but it\'s prized in special hands like the Thirteen Orphans.';
   return 'An ordinary number tile. It slots happily into runs such as ' + t.value + '-' + (t.value+1) + '-' + (t.value+2) + ' or into triplets.';
 }
 
 /* ============================================================
-   02 — Hand accordion + stage
+   02, Hand accordion + stage
    ============================================================ */
 
-/* Hand examples. Each entry has both HK (`pts`) and SG (`ptsSG`) values —
+/* Hand examples. Each entry has both HK (`pts`) and SG (`ptsSG`) values,
    selectHandPts() picks the right one at render time based on the ruleset. */
 function handPts(h) {
   return IS_SG ? (h.ptsSG || h.pts) : h.pts;
@@ -369,7 +369,7 @@ function renderHandStage(hand) {
 }
 
 /* ============================================================
-   04 — Turn actions
+   04, Turn actions
    ============================================================ */
 
 
@@ -385,7 +385,7 @@ function initActions() {
       if (a.example.length) {
         a.example.forEach(id => ex.appendChild(renderTile(id, { size: 'xs', button: false })));
       } else {
-        ex.innerHTML = '<span style="font-family:var(--sans);font-size:11px;color:var(--ink-faint);font-style:italic;letter-spacing:0.2px;">— no example —</span>';
+        ex.innerHTML = '<span style="font-family:var(--sans);font-size:11px;color:var(--ink-faint);font-style:italic;letter-spacing:0.2px;">no example</span>';
       }
       row.innerHTML = `
         <div class="mj-action-zh-col">
@@ -419,7 +419,7 @@ function initActions() {
 }
 
 /* ============================================================
-   05 — Faan grid
+   05, Faan grid
    ============================================================ */
 
 function initFaan() {
@@ -440,7 +440,7 @@ function initFaan() {
 }
 
 /* ============================================================
-   06 — Scenarios
+   06, Scenarios
    ============================================================ */
 
 function initScenarios() {
@@ -549,9 +549,9 @@ function initScenarios() {
   }
 
   function endMessage(s) {
-    if (s === SCENARIOS.length) return 'Find some friends and a tile set — you\'re ready to play.';
+    if (s === SCENARIOS.length) return 'Find some friends and a tile set. You\'re ready to play.';
     if (s >= SCENARIOS.length - 2) return 'A few more games and these decisions become reflex.';
-    if (s >= SCENARIOS.length / 2) return 'Re-read the Hands and Faan sections, then try again — the patterns click fast.';
+    if (s >= SCENARIOS.length / 2) return 'Re-read the Hands and Faan sections, then try again. The patterns click fast.';
     return 'These are real table calls. Skim the explanations, sit a few hands at a real table, and you\'ll see the patterns.';
   }
 
@@ -564,66 +564,66 @@ function initScenarios() {
 
 const TERMS = {
   // Hands (longest first via length sort below)
-  '對對糊': { py: 'duì duì hú',   en: 'All Pungs — every set is a triplet' },
-  '混一色': { py: 'hùn yī sè',    en: 'Mixed One Suit — one suit + honors' },
-  '清一色': { py: 'qīng yī sè',   en: 'Pure One Suit — one suit, nothing else' },
+  '對對糊': { py: 'duì duì hú',   en: 'All Pungs, every set is a triplet' },
+  '混一色': { py: 'hùn yī sè',    en: 'Mixed One Suit, one suit + honors' },
+  '清一色': { py: 'qīng yī sè',   en: 'Pure One Suit, one suit, nothing else' },
   '小三元': { py: 'xiǎo sān yuán',en: 'Small Three Dragons' },
   '大三元': { py: 'dà sān yuán',  en: 'Great Three Dragons' },
-  '字一色': { py: 'zì yī sè',     en: 'All Honors — winds and dragons only' },
-  '十三么': { py: 'shí sān yāo',  en: 'Thirteen Orphans — special winning shape' },
-  '門前清': { py: 'mén qián qīng',en: 'Concealed — no calls of pung/chow/kong' },
+  '字一色': { py: 'zì yī sè',     en: 'All Honors, winds and dragons only' },
+  '十三么': { py: 'shí sān yāo',  en: 'Thirteen Orphans, special winning shape' },
+  '門前清': { py: 'mén qián qīng',en: 'Concealed, no calls of pung/chow/kong' },
   '香港麻將': { py: 'xiāng gǎng má jiàng', en: 'Hong Kong Mahjong' },
   '新加坡麻將': { py: 'xīn jiā pō má jiàng', en: 'Singapore Mahjong' },
   // Singapore-specific hand and bonus terms
-  '對對胡': { py: 'duì duì hú',   en: 'All Pong — every set a triplet (Singapore notation)' },
-  '雞胡':   { py: 'jī hú',         en: 'Chicken hand — bare 4-sets-and-pair with no scoring elements' },
-  '混老頭': { py: 'hùn lǎo tóu',  en: 'Half Terminals — only 1s, 9s and honors' },
-  '清老頭': { py: 'qīng lǎo tóu', en: 'All Terminals — only 1s and 9s' },
-  '大四喜': { py: 'dà sì xǐ',     en: 'Big Four Blessings — pungs of all four winds' },
-  '搶槓':   { py: 'qiǎng gàng',   en: 'Robbing the Kong — win on the tile someone adds to a pung' },
+  '對對胡': { py: 'duì duì hú',   en: 'All Pong, every set a triplet (Singapore notation)' },
+  '雞胡':   { py: 'jī hú',         en: 'Chicken hand, bare 4-sets-and-pair with no scoring elements' },
+  '混老頭': { py: 'hùn lǎo tóu',  en: 'Half Terminals, only 1s, 9s and honors' },
+  '清老頭': { py: 'qīng lǎo tóu', en: 'All Terminals, only 1s and 9s' },
+  '大四喜': { py: 'dà sì xǐ',     en: 'Big Four Blessings, pungs of all four winds' },
+  '搶槓':   { py: 'qiǎng gàng',   en: 'Robbing the Kong, win on the tile someone adds to a pung' },
   '槓上開花': { py: 'gàng shàng kāi huā', en: 'Win on the kong replacement tile' },
   '海底撈月': { py: 'hǎi dǐ lāo yuè', en: 'Win on the very last tile from the wall' },
-  '動物': { py: 'dòng wù',        en: 'Animal — Singapore bonus tile (cat, rat, rooster, centipede)' },
-  '四動物': { py: 'sì dòng wù',   en: 'All four animals — pay-all limit hand' },
+  '動物': { py: 'dòng wù',        en: 'Animal, Singapore bonus tile (cat, rat, rooster, centipede)' },
+  '四動物': { py: 'sì dòng wù',   en: 'All four animals, pay-all limit hand' },
   '一色花': { py: 'yī sè huā',    en: 'Complete flower or season set' },
-  '七花': { py: 'qī huā',         en: 'Seven flowers/seasons — limit hand' },
-  '八花': { py: 'bā huā',         en: 'Eight flowers/seasons — instant win, pay-all' },
+  '七花': { py: 'qī huā',         en: 'Seven flowers/seasons, limit hand' },
+  '八花': { py: 'bā huā',         en: 'Eight flowers/seasons, instant win, pay-all' },
   // Animal tile names
-  '蜈蚣': { py: 'wú gōng',        en: 'Centipede — Singapore animal tile' },
-  '貓':   { py: 'māo',            en: 'Cat — Singapore animal (pairs with the Rat)' },
-  '鼠':   { py: 'shǔ',            en: 'Rat — Singapore animal (pairs with the Cat)' },
-  '雞':   { py: 'jī',             en: 'Rooster — Singapore animal (pairs with the Centipede)' },
+  '蜈蚣': { py: 'wú gōng',        en: 'Centipede, Singapore animal tile' },
+  '貓':   { py: 'māo',            en: 'Cat, Singapore animal (pairs with the Rat)' },
+  '鼠':   { py: 'shǔ',            en: 'Rat, Singapore animal (pairs with the Cat)' },
+  '雞':   { py: 'jī',             en: 'Rooster, Singapore animal (pairs with the Centipede)' },
   '蜈':   { py: 'wú',             en: 'Centipede tile glyph (short form)' },
-  '平糊': { py: 'píng hú',        en: 'Common Hand — all chows, valueless pair' },
-  '番牌': { py: 'fān pái',        en: 'Value tile — pung that scores faan' },
-  '花牌': { py: 'huā pái',        en: 'Bonus tile — flower or season' },
-  '自摸': { py: 'zì mō',          en: 'Self-draw — won on a tile you drew yourself' },
+  '平糊': { py: 'píng hú',        en: 'Common Hand, all chows, valueless pair' },
+  '番牌': { py: 'fān pái',        en: 'Value tile, pung that scores faan' },
+  '花牌': { py: 'huā pái',        en: 'Bonus tile, flower or season' },
+  '自摸': { py: 'zì mō',          en: 'Self-draw, won on a tile you drew yourself' },
   '摸牌': { py: 'mō pái',         en: 'To draw a tile' },
   '打牌': { py: 'dǎ pái',         en: 'To discard a tile' },
   '麻將': { py: 'má jiàng',       en: 'Mahjong' },
   // Single-character game terms
-  '番': { py: 'fān',  en: 'Faan — scoring doubling unit' },
+  '番': { py: 'fān',  en: 'Faan, scoring doubling unit' },
   '糊': { py: 'hú',   en: 'To win / complete the hand' },
-  '眼': { py: 'yǎn',  en: 'Eyes — the pair' },
-  '聽': { py: 'tīng', en: 'Tenpai — one tile from winning' },
-  '上': { py: 'shàng',en: 'Chow — claim a sequence' },
-  '碰': { py: 'pèng', en: 'Pung — claim a triplet' },
-  '槓': { py: 'gàng', en: 'Kong — claim/complete four of a kind' },
+  '眼': { py: 'yǎn',  en: 'Eyes, the pair' },
+  '聽': { py: 'tīng', en: 'Tenpai, one tile from winning' },
+  '上': { py: 'shàng',en: 'Chow, claim a sequence' },
+  '碰': { py: 'pèng', en: 'Pung, claim a triplet' },
+  '槓': { py: 'gàng', en: 'Kong, claim/complete four of a kind' },
   '摸': { py: 'mō',   en: 'To feel / draw a tile' },
   '打': { py: 'dǎ',   en: 'To strike / discard' },
   // Suits
-  '筒': { py: 'tǒng', en: 'Dots — the round-pip suit' },
-  '條': { py: 'tiáo', en: 'Bamboo — the stick suit' },
-  '萬': { py: 'wàn',  en: 'Characters — the "ten thousand" suit' },
-  '風': { py: 'fēng', en: 'Wind — honor tiles E/S/W/N' },
-  '箭': { py: 'jiàn', en: 'Dragons — the three honor tiles 中/發/白' },
+  '筒': { py: 'tǒng', en: 'Dots, the round-pip suit' },
+  '條': { py: 'tiáo', en: 'Bamboo, the stick suit' },
+  '萬': { py: 'wàn',  en: 'Characters, the "ten thousand" suit' },
+  '風': { py: 'fēng', en: 'Wind, honor tiles E/S/W/N' },
+  '箭': { py: 'jiàn', en: 'Dragons, the three honor tiles 中/發/白' },
   '花': { py: 'huā',  en: 'Flower' },
   '季': { py: 'jì',   en: 'Season' },
   // Honor characters
-  '東': { py: 'dōng', en: 'East — first seat, opening dealer' },
-  '南': { py: 'nán',  en: 'South — second seat' },
-  '西': { py: 'xī',   en: 'West — third seat' },
-  '北': { py: 'běi',  en: 'North — fourth seat' },
+  '東': { py: 'dōng', en: 'East, first seat, opening dealer' },
+  '南': { py: 'nán',  en: 'South, second seat' },
+  '西': { py: 'xī',   en: 'West, third seat' },
+  '北': { py: 'běi',  en: 'North, fourth seat' },
   '中': { py: 'zhōng',en: 'Red Dragon' },
   '發': { py: 'fā',   en: 'Green Dragon' },
   '白': { py: 'bái',  en: 'White Dragon (blank tile)' },
@@ -674,21 +674,21 @@ function wrapTermsIn(root) {
 }
 
 /* ============================================================
-   Section 02 — Valid vs Invalid examples
+   Section 02, Valid vs Invalid examples
    ============================================================ */
 
 const VI_EXAMPLES = {
   valid: [
     { tiles: ['d3','d4','d5'], note: '<strong>Chow.</strong> Three consecutive tiles, same suit.' },
     { tiles: ['b7','b7','b7'], note: '<strong>Pung.</strong> Three identical tiles.' },
-    { tiles: ['we','we','we','we'], note: '<strong>Kong.</strong> Four identical — draw a replacement tile.' },
-    { tiles: ['dr','dr'], note: '<strong>Pair.</strong> The "eyes" — every standard hand needs one.' },
+    { tiles: ['we','we','we','we'], note: '<strong>Kong.</strong> Four identical, draw a replacement tile.' },
+    { tiles: ['dr','dr'], note: '<strong>Pair.</strong> The "eyes", every standard hand needs one.' },
   ],
   invalid: [
     { tiles: ['d3','b4','c5'], note: 'Three different suits. <strong>Chows must share a suit.</strong>' },
     { tiles: ['c2','c4','c6'], note: 'Same suit but not consecutive. <strong>Chows need 1-2-3, not 2-4-6.</strong>' },
     { tiles: ['we','ws','ww'], note: 'Three different winds. <strong>Honors only combine as pairs or pungs</strong>, never chows.' },
-    { tiles: ['d5','d5'], note: 'This is just a pair — and a hand can have only <strong>one</strong> pair, not two.' },
+    { tiles: ['d5','d5'], note: 'This is just a pair, and a hand can have only <strong>one</strong> pair, not two.' },
   ],
 };
 
@@ -713,7 +713,7 @@ function renderViExample(ex) {
 }
 
 /* ============================================================
-   Section 02 — Hand-builder sandbox
+   Section 02, Hand-builder sandbox
    ============================================================ */
 
 const PALETTE_ROWS = [
@@ -905,7 +905,7 @@ function renderSandbox() {
     `;
     const tilesHost = div.querySelector('.mj-slot-tiles');
     if (slot.tiles.length === 0) {
-      tilesHost.innerHTML = '<span class="mj-slot-placeholder">— ' + label.toLowerCase() + ' —</span>';
+      tilesHost.innerHTML = '<span class="mj-slot-placeholder">' + label.toLowerCase() + '</span>';
     } else {
       slot.tiles.forEach((id, ti) => {
         const t = renderTile(id, { size: 'xs', onClick: () => sandboxRemoveFromSlot(i, ti) });
@@ -941,7 +941,7 @@ function renderVerdict() {
   for (const k of Object.keys(counts)) {
     if (counts[k] > 4) {
       host.className = 'mj-sandbox-verdict is-fail';
-      host.innerHTML = `<span><strong>Too many copies.</strong> A real set has only 4 of each tile — you have ${counts[k]} of ${TILE_BY_ID[k].name}.</span>`;
+      host.innerHTML = `<span><strong>Too many copies.</strong> A real set has only 4 of each tile. You have ${counts[k]} of ${TILE_BY_ID[k].name}.</span>`;
       return;
     }
   }
@@ -962,12 +962,12 @@ function renderVerdict() {
     }
     return;
   }
-  // every slot valid — check it's actually a winning hand
+  // every slot valid, check it's actually a winning hand
   if (isWinningHand(all)) {
     const pattern = identifyPattern(all, SANDBOX.slots);
     host.className = 'mj-sandbox-verdict is-win';
     host.innerHTML = `
-      <span><strong>✓ Valid winning hand.</strong> 4 sets and a pair — you could declare on this.</span>
+      <span><strong>✓ Valid winning hand.</strong> 4 sets and a pair. You could declare on this.</span>
       ${pattern ? `<span class="mj-sandbox-verdict-pattern">${pattern}</span>` : ''}
     `;
   } else {
@@ -1025,7 +1025,7 @@ function identifyPattern(allTiles, slots) {
 }
 
 /* ============================================================
-   Section 07 — Random drills (Phase A simulator primitives)
+   Section 07, Random drills (Phase A simulator primitives)
    ============================================================ */
 
 function shuffleArr(arr) {
@@ -1036,7 +1036,7 @@ function shuffleArr(arr) {
   return arr;
 }
 
-/* Animals and flowers are bonus tiles — they sit on the side and don't enter
+/* Animals and flowers are bonus tiles, they sit on the side and don't enter
    the playable wall. The 136-tile play wall is identical in both rulesets. */
 
 /* Build a winning hand by randomly assembling 4 sets + a pair, retrying until
@@ -1076,7 +1076,7 @@ function randomTenpaiHand() {
   // Take a winning hand and drop a random tile.
   // Then verify findWaits is non-empty (occasionally the dropped position is
   // covered by an alternate decomposition the validator finds first, giving
-  // multiple waits — that's fine and educational).
+  // multiple waits, that's fine and educational).
   for (let attempt = 0; attempt < 10; attempt++) {
     const win = randomWinningHand();
     const idx = Math.floor(Math.random() * win.length);
@@ -1124,11 +1124,11 @@ function discardSuggestion(tiles) {
     if (t.isHonor) {
       if (c === 1) {
         return { id, score: -10,
-          reason: `Lone ${t.name}. Honors only combine as pairs/pungs, never chows — a single honor with no partners is the textbook early discard.` };
+          reason: `Lone ${t.name}. Honors only combine as pairs/pungs, never chows, a single honor with no partners is the textbook early discard.` };
       }
       // pair/pung of honors: very valuable, especially dragons
       if (t.suit === 'dragon') score += 4;
-      return { id, score, reason: c >= 3 ? `Already a pung of ${t.name} — keep it.` : `Pair of ${t.name} — one more makes a scoring pung.` };
+      return { id, score, reason: c >= 3 ? `Already a pung of ${t.name}, keep it.` : `Pair of ${t.name}, one more makes a scoring pung.` };
     }
 
     // Suit tile: check for in-hand neighbours
@@ -1144,7 +1144,7 @@ function discardSuggestion(tiles) {
     score += neighbours;
     if (t.isTerminal && c === 1 && neighbours === 0) {
       return { id, score: -7,
-        reason: `Lone ${t.name} (a terminal). Terminals can only join chows from one side and you have no neighbours — limited use.` };
+        reason: `Lone ${t.name} (a terminal). Terminals can only join chows from one side and you have no neighbours, limited use.` };
     }
     if (neighbours === 0 && c === 1) {
       return { id, score: -5,
@@ -1157,7 +1157,7 @@ function discardSuggestion(tiles) {
   return scored[0];
 }
 
-/* Section 07 — drill orchestrator */
+/* Section 07, drill orchestrator */
 
 
 let drillState = { active: 'waits', current: null };
@@ -1281,7 +1281,7 @@ function renderWaitsDrill(host) {
     } else {
       fb.classList.add('is-wrong');
       const actual = s.waits.map(w => TILE_BY_ID[w].name).join(', ');
-      fb.innerHTML = `<strong>Not quite.</strong> The hand is waiting on <em>${actual}</em>. Look at the palette — jade tiles are correct, faded jade are ones you missed, red is a tile you picked that doesn't complete the hand.`;
+      fb.innerHTML = `<strong>Not quite.</strong> The hand is waiting on <em>${actual}</em>. Look at the palette, jade tiles are correct, faded jade are ones you missed, red is a tile you picked that doesn't complete the hand.`;
     }
     host.appendChild(fb);
     const next = document.createElement('button');
@@ -1306,7 +1306,7 @@ function renderWinOrNotDrill(host) {
 
   host.appendChild(drillHeader(
     'Win or not?',
-    '14 tiles. Decide whether the shape — 4 sets + a pair, or Thirteen Orphans — is satisfied. Some are real wins, some are close, some are nowhere near.',
+    '14 tiles. Decide whether the shape, 4 sets + a pair, or Thirteen Orphans, is satisfied. Some are real wins, some are close, some are nowhere near.',
     `${stats.right} / ${stats.total} correct`
   ));
 
@@ -1323,7 +1323,7 @@ function renderWinOrNotDrill(host) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'mj-drill-bigbtn mj-drill-' + ans;
-      b.textContent = ans === 'yes' ? 'Yes — winning hand' : 'No — not a win';
+      b.textContent = ans === 'yes' ? 'Yes, winning hand' : 'No, not a win';
       b.addEventListener('click', () => {
         s.answer = ans;
         s.revealed = true;
@@ -1340,9 +1340,9 @@ function renderWinOrNotDrill(host) {
     fb.className = 'mj-drill-feedback ' + (correct ? 'is-correct' : 'is-wrong');
     if (s.isWin) {
       const decomp = decomposeWinDisplay(s.hand);
-      fb.innerHTML = `<strong>${correct ? 'Right — it wins.' : 'It is a winning hand.'}</strong> ${decomp}`;
+      fb.innerHTML = `<strong>${correct ? 'Right, it wins.' : 'It is a winning hand.'}</strong> ${decomp}`;
     } else {
-      fb.innerHTML = `<strong>${correct ? 'Right — it does not win.' : 'It does not win.'}</strong> ${explainNonWin(s.hand)}`;
+      fb.innerHTML = `<strong>${correct ? 'Right, it does not win.' : 'It does not win.'}</strong> ${explainNonWin(s.hand)}`;
     }
     host.appendChild(fb);
 
@@ -1378,13 +1378,13 @@ function generateWinOrNotDrill() {
       return { kind: 'winornot', hand: sortHand(corrupted), isWin: false, revealed: false };
     }
   }
-  // Pure random — almost certainly not a win
+  // Pure random, almost certainly not a win
   const r = random14Tiles();
   return { kind: 'winornot', hand: r, isWin: isWinningHand(r), revealed: false };
 }
 
 function decomposeWinDisplay(tiles) {
-  if (isThirteenOrphans(tiles)) return 'It is <em>Thirteen Orphans</em> — one of every terminal and honor plus a pair.';
+  if (isThirteenOrphans(tiles)) return 'It is <em>Thirteen Orphans</em>, one of every terminal and honor plus a pair.';
   const d = decomposeWin(tiles);
   if (!d) return 'It decomposes into 4 sets and a pair.';
   const parts = d.sets.map(s => {
@@ -1399,11 +1399,11 @@ function explainNonWin(tiles) {
   // Heuristic explanation: look for the most obvious problem
   const counts = handToCounts(tiles);
   // overflow?
-  for (let i = 0; i < 34; i++) if (counts[i] > 4) return 'Tile counts are off — more than four of one kind.';
+  for (let i = 0; i < 34; i++) if (counts[i] > 4) return 'Tile counts are off, more than four of one kind.';
   // No pair?
-  if (!counts.some(c => c >= 2)) return 'No pair anywhere — every standard winning hand needs exactly one pair.';
+  if (!counts.some(c => c >= 2)) return 'No pair anywhere. Every standard winning hand needs exactly one pair.';
   // Wrong tile count?
-  if (tiles.length !== 14) return `Only ${tiles.length} tiles — a winning hand has exactly 14.`;
+  if (tiles.length !== 14) return `Only ${tiles.length} tiles, a winning hand has exactly 14.`;
   return 'The tiles don\'t split cleanly into 4 sets and a pair. Try the Hand Builder above to see how close you can get.';
 }
 
@@ -1428,7 +1428,7 @@ function renderDiscardDrill(host) {
 
   host.appendChild(drillHeader(
     'Best discard',
-    'A random 14-tile hand. Pick the tile you would throw. The app reveals what a basic AI heuristic would discard, with reasoning. Real mahjong rarely has a single "right" answer — but the patterns it explains are real.',
+    'A random 14-tile hand. Pick the tile you would throw. The app reveals what a basic AI heuristic would discard, with reasoning. Real mahjong rarely has a single "right" answer, but the patterns it explains are real.',
     `${stats.played} hands · ${stats.matchedSuggestion} matched the heuristic`
   ));
 
@@ -1490,7 +1490,7 @@ function renderDiscardDrill(host) {
     if (matched) {
       fb.innerHTML = `<strong>You matched the heuristic.</strong> ${s.suggestion.reason}`;
     } else {
-      fb.innerHTML = `<strong>You picked ${yourChoice.name}.</strong> The heuristic would discard <em>${suggested.name}</em> instead — ${s.suggestion.reason} Your choice may well be defensible — discard decisions depend on what you're building toward.`;
+      fb.innerHTML = `<strong>You picked ${yourChoice.name}.</strong> The heuristic would discard <em>${suggested.name}</em> instead, ${s.suggestion.reason} Your choice may well be defensible, discard decisions depend on what you're building toward.`;
     }
     host.appendChild(fb);
     const next = document.createElement('button');
@@ -1505,7 +1505,7 @@ function renderDiscardDrill(host) {
 }
 
 /* ============================================================
-   Section 08 — Phase B: auto-play viewer
+   Section 08, Phase B: auto-play viewer
    ============================================================ */
 
 const SEAT_NAMES = ['East', 'South', 'West', 'North'];
@@ -1721,7 +1721,7 @@ function renderDemoCaption() {
   const cap = document.querySelector('#demo-caption');
   if (!cap || !DEMO.game) return;
   const ev = DEMO.game.lastEvent;
-  if (!ev) { cap.innerHTML = 'Hands dealt — East to discard.'; return; }
+  if (!ev) { cap.innerHTML = 'Hands dealt, East to discard.'; return; }
   const name = i => SEAT_NAMES[i];
   const tileName = id => TILE_BY_ID[id]?.name || id;
   switch (ev.type) {
@@ -1742,7 +1742,7 @@ function renderDemoCaption() {
       }
       break;
     case 'exhausted':
-      cap.innerHTML = `<strong>Wall exhausted.</strong> No winner this round — common outcome, even at a real table.`;
+      cap.innerHTML = `<strong>Wall exhausted.</strong> No winner this round, common outcome, even at a real table.`;
       break;
     default:
       cap.textContent = '';
@@ -1762,11 +1762,30 @@ function renderDemoStatus() {
 }
 
 /* ============================================================
-   Section 09 — Phase C: play a round (you vs three AI)
+   Section 09, Phase C: play a round (you vs three AI)
    ============================================================ */
 
 let PLAY = createPlayInitialState();
 let playTimer = null;
+let playEventLog = [];
+let lastPlayEventKey = null;
+let playBeginnerBoard = true;
+let playHints = true;
+
+function resetPlayEventLog() {
+  playEventLog = [];
+  lastPlayEventKey = null;
+}
+
+function togglePlayOption(option) {
+  if (option === 'board') playBeginnerBoard = !playBeginnerBoard;
+  if (option === 'hints') playHints = !playHints;
+  renderPlayFull();
+}
+
+function playHint(text) {
+  return playHints ? `<span>${text}</span>` : '';
+}
 
 function dispatchPlay(action) {
   PLAY = playReducer(PLAY, action);
@@ -1794,6 +1813,7 @@ function initPlay() {
 function playAction(action) {
   if (action === 'start' || action === 'newround') {
     clearPlayTimer();
+    resetPlayEventLog();
     dispatchPlay({ type: 'start', game: newDemoGame() });
     renderPlayFull();
     schedulePlayStep();
@@ -1844,9 +1864,10 @@ function renderPlayIdle() {
   table.innerHTML = `
     <div class="mj-play-welcome">
       <div class="mj-play-welcome-h">Ready when you are.</div>
-      <p>You'll sit as <strong>East</strong> — the dealer for this round. The three other seats will be played by the AI you've already met. Your tiles will be face-up; theirs will be hidden, like a real table. Call pung, chow, or mahjong when the right discard appears.</p>
+      <p>You'll sit as <strong>East</strong>, the dealer for this round. Three AI seats play against you. Your tiles stay face-up; theirs stay hidden, like a real table. Call pung, chow, or mahjong when the right discard appears.</p>
     </div>
   `;
+  resetPlayEventLog();
   if (action) action.innerHTML = '<button class="mj-btn mj-btn-primary" data-play="start">▶ Deal me in</button>';
   if (status) { status.innerHTML = ''; delete status.dataset.built; }
   document.querySelectorAll('[data-play="start"]').forEach(b => b.addEventListener('click', () => playAction('start')));
@@ -1860,9 +1881,13 @@ function ensurePlayStructure() {
   if (!table || !PLAY.game) return;
   if (PLAY.structureBuilt) return;
   table.innerHTML = '';
-  // Visual order: opponents first (South, West, North), then YOU at the bottom.
+  // Visual order: opponents first (South, West, North), then a beginner board,
+  // then YOU at the bottom.
   const order = [1, 2, 3, PLAY.humanSeat];
   order.forEach(i => {
+    if (i === PLAY.humanSeat) {
+      table.appendChild(createPlayBoardShell());
+    }
     const isYou = (i === PLAY.humanSeat);
     const p = PLAY.game.players[i];
     table.appendChild(componentToElement(PlayerSeat({
@@ -1885,7 +1910,69 @@ function ensurePlayStructure() {
   wrapTermsIn(table);
 }
 
-/* Update only the dynamic content of one seat — tiles & discards.
+/* Beginner board helpers, centralize public information for new players. */
+function createPlayBoardShell() {
+  const board = document.createElement('section');
+  board.className = 'mj-play-board';
+  board.setAttribute('aria-label', 'Public board state');
+  board.innerHTML = '';
+  return board;
+}
+
+function playEventKey(ev, g) {
+  if (!ev || !g) return null;
+  const discardTotal = g.players.reduce((sum, p) => sum + p.discards.length, 0);
+  const meldTotal = g.players.reduce((sum, p) => sum + p.melds.length, 0);
+  return [ev.type, ev.player, ev.tile, ev.kind, ev.fromSeat, discardTotal, meldTotal, g.turn, g.winner].join(':');
+}
+
+function describePlayEvent(ev, g) {
+  if (!ev || !g) return 'Round dealt. Watch the public tiles here as the table changes.';
+  const name = SEAT_NAMES[ev.player ?? g.turn];
+  if (ev.type === 'draw') return `${name} drew a tile.`;
+  if (ev.type === 'discard') return `${name} discarded ${TILE_BY_ID[ev.tile]?.name || 'a tile'}.`;
+  if (ev.type === 'call') {
+    const kind = ev.kind === 'pung' ? 'pung' : ev.kind === 'kong' ? 'kong' : 'chow';
+    return `${name} called ${kind} on ${TILE_BY_ID[ev.tile]?.name || 'a tile'} from ${SEAT_NAMES[ev.fromSeat]}.`;
+  }
+  if (ev.type === 'win') {
+    const source = ev.source === 'self-draw' ? 'by self-draw' : `from ${SEAT_NAMES[ev.from]}'s discard`;
+    return `${name} won ${source}.`;
+  }
+  if (ev.type === 'pass') return 'Everyone passed. Play moves on.';
+  if (ev.type === 'exhausted') return 'The wall is exhausted. The round is a draw.';
+  return 'The table is thinking…';
+}
+
+function recordPlayEvent() {
+  const g = PLAY.game;
+  if (!g?.lastEvent) return;
+  const key = playEventKey(g.lastEvent, g);
+  if (!key || key === lastPlayEventKey) return;
+  lastPlayEventKey = key;
+  playEventLog.unshift(describePlayEvent(g.lastEvent, g));
+  playEventLog = playEventLog.slice(0, 8);
+}
+
+function renderPlayPublicBoard() {
+  const board = document.querySelector('#play-table .mj-play-board');
+  if (!board || !PLAY.game) return;
+  const g = PLAY.game;
+  recordPlayEvent();
+  board.hidden = !playBeginnerBoard;
+  if (!playBeginnerBoard) return;
+
+  board.innerHTML = `
+    <div class="mj-play-event-rail" data-role="event-rail" aria-label="Recent round events">
+      <div class="mj-play-board-kicker">What changed?</div>
+      <ol>${(playEventLog.length ? playEventLog : ['Round dealt. Watch draws, discards and calls here.']).map(item => `<li>${item}</li>`).join('')}</ol>
+      <div class="mj-play-board-counts"><span>Wall <strong>${wallRemaining(g.wall)}</strong></span></div>
+    </div>
+  `;
+  wrapTermsIn(board);
+}
+
+/* Update only the dynamic content of one seat, tiles & discards.
    The seat scaffold and seat-head remain intact across events. */
 function updatePlaySeat(seat, i) {
   const g = PLAY.game;
@@ -1941,6 +2028,7 @@ function renderPlayFull() {
     const i = parseInt(seat.dataset.seat, 10);
     if (!Number.isNaN(i)) updatePlaySeat(seat, i);
   });
+  renderPlayPublicBoard();
   renderPlayActionBar();
   renderPlayStatus();
   if (PLAY.mode === 'ended') renderPlayWinBanner();
@@ -1952,8 +2040,8 @@ function renderPlayActionBar() {
   bar.innerHTML = '';
   if (PLAY.mode === 'awaiting-discard') {
     const msg = document.createElement('div');
-    msg.className = 'mj-play-prompt';
-    msg.innerHTML = '<strong>Your turn.</strong> Click any tile in your hand to discard it.';
+    msg.className = 'mj-play-prompt mj-play-decision-card';
+    msg.innerHTML = `<div class="mj-play-decision-kicker">Your decision</div><strong>Your turn.</strong>${playHint('Click any tile in your hand to discard it. The public board above shows the latest discard history.')}`;
     bar.appendChild(msg);
     return;
   }
@@ -1966,8 +2054,8 @@ function renderPlayActionBar() {
       ? `<strong>You can declare Mahjong</strong> on ${from}'s <em>${tile.name}</em>!`
       : `<strong>${from} discarded ${tile.name}.</strong> You can call <em>${kindLabel}</em>.`;
     const msg = document.createElement('div');
-    msg.className = 'mj-play-prompt mj-play-prompt-call';
-    msg.innerHTML = promptText;
+    msg.className = 'mj-play-prompt mj-play-prompt-call mj-play-decision-card';
+    msg.innerHTML = `<div class="mj-play-decision-kicker">Claim opportunity</div>${promptText}${playHint('Calling exposes tiles but can complete a set or win the hand right now.')}`;
     bar.appendChild(msg);
 
     // Show the would-be meld preview
@@ -2006,7 +2094,7 @@ function renderPlayActionBar() {
   const ev = PLAY.game?.lastEvent;
   if (ev) {
     const msg = document.createElement('div');
-    msg.className = 'mj-play-prompt';
+    msg.className = 'mj-play-prompt mj-play-decision-card';
     const name = SEAT_NAMES[ev.player ?? PLAY.game.turn];
     if (ev.type === 'draw') {
       msg.innerHTML = `<em>${name} draws.</em>`;
@@ -2031,15 +2119,27 @@ function renderPlayStatus() {
   if (!status.dataset.built) {
     status.innerHTML = `
       <span>Round <em data-stat="round">East</em></span>
-      <span>Wall <em data-stat="wall">—</em> left</span>
-      <span>Turn <em data-stat="turn">—</em></span>
+      <span>Wall <em data-stat="wall">-</em> left</span>
+      <span>Turn <em data-stat="turn">-</em></span>
+      <span class="mj-play-toggles">
+        <button type="button" data-play-toggle="board" aria-pressed="true">Beginner board on</button>
+        <button type="button" data-play-toggle="hints" aria-pressed="true">Hints on</button>
+      </span>
     `;
+    status.querySelectorAll('[data-play-toggle]').forEach(btn => btn.addEventListener('click', () => togglePlayOption(btn.dataset.playToggle)));
     status.dataset.built = '1';
   }
   const wallEl = status.querySelector('[data-stat="wall"]');
   const turnEl = status.querySelector('[data-stat="turn"]');
   if (wallEl) wallEl.textContent = String(wallRemaining(g.wall));
-  if (turnEl) turnEl.textContent = PLAY.mode === 'ended' ? '—' : SEAT_NAMES[g.turn];
+  if (turnEl) turnEl.textContent = PLAY.mode === 'ended' ? '-' : SEAT_NAMES[g.turn];
+  status.querySelectorAll('[data-play-toggle]').forEach(btn => {
+    const on = btn.dataset.playToggle === 'board' ? playBeginnerBoard : playHints;
+    btn.setAttribute('aria-pressed', String(on));
+    btn.textContent = btn.dataset.playToggle === 'board'
+      ? `Beginner board ${on ? 'on' : 'off'}`
+      : `Hints ${on ? 'on' : 'off'}`;
+  });
 }
 
 function renderPlayWinBanner() {
@@ -2052,7 +2152,7 @@ function renderPlayWinBanner() {
 
   if (g.winner === null || g.winner === undefined) {
     banner.classList.add('is-draw');
-    banner.innerHTML = `<div class="mj-play-banner-h">Wall exhausted</div><p>No winner this round — common at any table. Deal again.</p>`;
+    banner.innerHTML = `<div class="mj-play-banner-h">Wall exhausted</div><p>No winner this round. That is common at any table. Deal again.</p>`;
   } else {
     const won = g.winner === PLAY.humanSeat;
     const winner = g.players[g.winner];
@@ -2065,14 +2165,14 @@ function renderPlayWinBanner() {
     const unit = SCORE_UNIT;
     const minUnit = IS_SG ? 1 : 3;
     const capLine = score.capped
-      ? `<p class="mj-play-faan-warn">Singapore caps payout at ${SCORE_VALUES.cap} ${unit} — raw total ${score.raw} ${unit} clamped to ${score.total}.</p>`
+      ? `<p class="mj-play-faan-warn">Singapore caps payout at ${SCORE_VALUES.cap} ${unit}. Raw total ${score.raw} ${unit} clamped to ${score.total}.</p>`
       : '';
     const underMinLine = (!score.capped && score.total < minUnit)
-      ? `<p class="mj-play-faan-warn">Under ${minUnit} ${unit} — at most tables this hand would not be declarable. We show it for educational purposes.</p>`
+      ? `<p class="mj-play-faan-warn">Under ${minUnit} ${unit}. At most tables this hand would not be declarable. We show it for educational purposes.</p>`
       : '';
     const patternsHtml = score.patterns.length
       ? `<table class="mj-play-faan">${score.patterns.map(p => `<tr><td>${p.name}</td><td class="mj-play-faan-zh">${p.zh}</td><td class="mj-play-faan-val">${p.faan} ${unit}</td></tr>`).join('')}<tr class="mj-play-faan-total"><td>Total</td><td></td><td class="mj-play-faan-val">${score.total} ${unit}${score.capped ? ' (cap)' : ''}</td></tr></table>`
-      : `<p class="mj-play-faan-none">No scoring patterns — would not actually win under a ${minUnit}-${unit} minimum.</p>`;
+      : `<p class="mj-play-faan-none">No scoring patterns. This would not actually win under a ${minUnit}-${unit} minimum.</p>`;
     banner.innerHTML = `
       <div class="mj-play-banner-h">${headline}</div>
       ${patternsHtml}
@@ -2122,7 +2222,12 @@ function selfTest() {
   console.assert(w.length === 1 && w[0] === 'c2', 'pair wait: ' + JSON.stringify(w));
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+let runtimeBooted = false;
+
+export function initMahjongRuntime() {
+  if (runtimeBooted) return;
+  runtimeBooted = true;
+
   initNav();
   initTileExplorer();
   initHands();
@@ -2137,4 +2242,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wrap Chinese terms in tooltip spans AFTER all dynamic content has rendered.
   wrapTermsIn(document.body);
   selfTest();
-});
+}

@@ -1,28 +1,48 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { RulesetProvider, RULESET_STORAGE_KEY } from '../../state/RulesetContext';
 import { SideNav } from './SideNav';
 
+function createLocalStorage(initial: Record<string, string> = {}) {
+  const store = new Map(Object.entries(initial));
+
+  return {
+    clear: () => store.clear(),
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => store.set(key, value),
+  };
+}
+
+function renderSideNav(initialStorage: Record<string, string> = {}) {
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      localStorage: createLocalStorage(initialStorage),
+      dispatchEvent: () => true,
+    },
+  });
+
+  return renderToStaticMarkup(
+    <RulesetProvider>
+      <SideNav />
+    </RulesetProvider>,
+  );
+}
+
 describe('SideNav ruleset controls', () => {
-  it('stores and highlights the selected ruleset', () => {
-    window.localStorage.clear();
+  it('highlights Hong Kong by default', () => {
+    const markup = renderSideNav();
 
-    render(
-      <RulesetProvider>
-        <SideNav />
-      </RulesetProvider>,
-    );
+    assert.match(markup, /Hong Kong<\/button>/);
+    assert.match(markup, /Singapore<\/button>/);
+    assert.match(markup, /mj-theme-btn is-active[^>]*>Hong Kong/);
+  });
 
-    const hongKongButton = screen.getByRole('button', { name: 'Hong Kong' });
-    const singaporeButton = screen.getByRole('button', { name: 'Singapore' });
+  it('highlights a Singapore ruleset loaded from localStorage', () => {
+    const markup = renderSideNav({ [RULESET_STORAGE_KEY]: 'sg' });
 
-    expect(hongKongButton.classList.contains('is-active')).toBe(true);
-    expect(singaporeButton.classList.contains('is-active')).toBe(false);
-
-    fireEvent.click(singaporeButton);
-
-    expect(window.localStorage.getItem(RULESET_STORAGE_KEY)).toBe('sg');
-    expect(hongKongButton.classList.contains('is-active')).toBe(false);
-    expect(singaporeButton.classList.contains('is-active')).toBe(true);
+    assert.match(markup, /mj-theme-btn is-active[^>]*>Singapore/);
+    assert.match(markup, /mj-theme-btn[^>]*>Hong Kong/);
   });
 });

@@ -6,7 +6,7 @@ export function PlaySection() {
       <div className="mj-section-head">
         <div className="mj-kicker" aria-label="Section: play a round">玩</div>
         <h2 className="mj-h2">Now <em>you</em> play.</h2>
-        <p className="mj-lede">Take the <strong>East</strong> seat — you&apos;re the dealer — against three bots. You see your own tiles; theirs stay hidden, same as a real table. Draw each turn, then tap a tile to throw it. If someone discards something you can pung, chow or win on, you&apos;ll get the option. When the hand ends, you&apos;ll see exactly which patterns paid out.</p>
+        <p className="mj-lede">Take the <strong>East</strong> seat as dealer against three bots. You see your own tiles; theirs stay hidden, same as a real table. Draw each turn, then tap a tile to throw it. If someone discards something you can pung, chow or win on, you&apos;ll get the option. When the hand ends, you&apos;ll see exactly which patterns paid out.</p>
       </div>
 
       <div className="mj-play">

@@ -6,7 +6,7 @@ export function DemoSection() {
       <div className="mj-section-head">
         <div className="mj-kicker" aria-label="Section: watch a round">觀</div>
         <h2 className="mj-h2">Watch a full <em>round</em>.</h2>
-        <p className="mj-lede">Sit back while four bots play a hand from shuffle to finish — a win, or a dead wall. Every tile is shown, so you can watch each seat take shape, with a running caption on each draw, discard and call. Speed it up, slow it down, or step through one move at a time.</p>
+        <p className="mj-lede">Sit back while four bots play a hand from shuffle to finish, a win, or a dead wall. Every tile is shown, so you can watch each seat take shape, with a running caption on each draw, discard and call. Speed it up, slow it down, or step through one move at a time.</p>
       </div>
 
       <div className="mj-demo">
