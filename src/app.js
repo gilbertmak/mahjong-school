@@ -1767,6 +1767,25 @@ function renderDemoStatus() {
 
 let PLAY = createPlayInitialState();
 let playTimer = null;
+let playEventLog = [];
+let lastPlayEventKey = null;
+let playBeginnerBoard = true;
+let playHints = true;
+
+function resetPlayEventLog() {
+  playEventLog = [];
+  lastPlayEventKey = null;
+}
+
+function togglePlayOption(option) {
+  if (option === 'board') playBeginnerBoard = !playBeginnerBoard;
+  if (option === 'hints') playHints = !playHints;
+  renderPlayFull();
+}
+
+function playHint(text) {
+  return playHints ? `<span>${text}</span>` : '';
+}
 
 function dispatchPlay(action) {
   PLAY = playReducer(PLAY, action);
@@ -1794,6 +1813,7 @@ function initPlay() {
 function playAction(action) {
   if (action === 'start' || action === 'newround') {
     clearPlayTimer();
+    resetPlayEventLog();
     dispatchPlay({ type: 'start', game: newDemoGame() });
     renderPlayFull();
     schedulePlayStep();
@@ -1847,6 +1867,7 @@ function renderPlayIdle() {
       <p>You'll sit as <strong>East</strong> — the dealer for this round. The three other seats will be played by the AI you've already met. Your tiles will be face-up; theirs will be hidden, like a real table. Call pung, chow, or mahjong when the right discard appears.</p>
     </div>
   `;
+  resetPlayEventLog();
   if (action) action.innerHTML = '<button class="mj-btn mj-btn-primary" data-play="start">▶ Deal me in</button>';
   if (status) { status.innerHTML = ''; delete status.dataset.built; }
   document.querySelectorAll('[data-play="start"]').forEach(b => b.addEventListener('click', () => playAction('start')));
@@ -1860,9 +1881,13 @@ function ensurePlayStructure() {
   if (!table || !PLAY.game) return;
   if (PLAY.structureBuilt) return;
   table.innerHTML = '';
-  // Visual order: opponents first (South, West, North), then YOU at the bottom.
+  // Visual order: opponents first (South, West, North), then a beginner board,
+  // then YOU at the bottom.
   const order = [1, 2, 3, PLAY.humanSeat];
   order.forEach(i => {
+    if (i === PLAY.humanSeat) {
+      table.appendChild(createPlayBoardShell());
+    }
     const isYou = (i === PLAY.humanSeat);
     const p = PLAY.game.players[i];
     table.appendChild(componentToElement(PlayerSeat({
@@ -1883,6 +1908,153 @@ function ensurePlayStructure() {
   // One-time wrap of the static Chinese in seat heads. Dynamic captions are
   // handled by wrapTermsIn(bar) inside renderPlayActionBar.
   wrapTermsIn(table);
+}
+
+/* Beginner board helpers — centralize public information for new players. */
+function createPlayBoardShell() {
+  const board = document.createElement('section');
+  board.className = 'mj-play-board';
+  board.setAttribute('aria-label', 'Public board state');
+  board.innerHTML = `
+    <div class="mj-play-board-main" data-role="public-board-main"></div>
+    <aside class="mj-play-event-rail" data-role="event-rail" aria-label="Recent round events"></aside>
+  `;
+  return board;
+}
+
+function playEventKey(ev, g) {
+  if (!ev || !g) return null;
+  const discardTotal = g.players.reduce((sum, p) => sum + p.discards.length, 0);
+  const meldTotal = g.players.reduce((sum, p) => sum + p.melds.length, 0);
+  return [ev.type, ev.player, ev.tile, ev.kind, ev.fromSeat, discardTotal, meldTotal, g.turn, g.winner].join(':');
+}
+
+function describePlayEvent(ev, g) {
+  if (!ev || !g) return 'Round dealt. Watch the public tiles here as the table changes.';
+  const name = SEAT_NAMES[ev.player ?? g.turn];
+  if (ev.type === 'draw') return `${name} drew a tile.`;
+  if (ev.type === 'discard') return `${name} discarded ${TILE_BY_ID[ev.tile]?.name || 'a tile'}.`;
+  if (ev.type === 'call') {
+    const kind = ev.kind === 'pung' ? 'pung' : ev.kind === 'kong' ? 'kong' : 'chow';
+    return `${name} called ${kind} on ${TILE_BY_ID[ev.tile]?.name || 'a tile'} from ${SEAT_NAMES[ev.fromSeat]}.`;
+  }
+  if (ev.type === 'win') {
+    const source = ev.source === 'self-draw' ? 'by self-draw' : `from ${SEAT_NAMES[ev.from]}'s discard`;
+    return `${name} won ${source}.`;
+  }
+  if (ev.type === 'pass') return 'Everyone passed. Play moves on.';
+  if (ev.type === 'exhausted') return 'The wall is exhausted. The round is a draw.';
+  return 'The table is thinking…';
+}
+
+function recordPlayEvent() {
+  const g = PLAY.game;
+  if (!g?.lastEvent) return;
+  const key = playEventKey(g.lastEvent, g);
+  if (!key || key === lastPlayEventKey) return;
+  lastPlayEventKey = key;
+  playEventLog.unshift(describePlayEvent(g.lastEvent, g));
+  playEventLog = playEventLog.slice(0, 8);
+}
+
+function latestPlayTileInfo(g) {
+  const ev = g.lastEvent;
+  if (!ev) return { label: 'Round dealt', detail: 'Your hand is at the bottom. Public discards and exposed melds will collect here.', tileId: null };
+  if (ev.type === 'draw') return { label: `${SEAT_NAMES[ev.player]} drew`, detail: ev.player === PLAY.humanSeat ? 'Pick one tile from your hand to discard.' : 'Opponents keep drawn tiles hidden unless discarded or melded.', tileId: ev.player === PLAY.humanSeat ? ev.tile : null };
+  if (ev.type === 'discard') return { label: `${SEAT_NAMES[ev.player]} discarded`, detail: 'This tile is now public. If you can claim it, your choices appear below.', tileId: ev.tile };
+  if (ev.type === 'call') return { label: `${SEAT_NAMES[ev.player]} called ${ev.kind}`, detail: `Claimed from ${SEAT_NAMES[ev.fromSeat]} and exposed as a meld.`, tileId: ev.tile };
+  if (ev.type === 'win') return { label: `${SEAT_NAMES[ev.player]} won`, detail: ev.source === 'self-draw' ? 'The winning tile came from the wall.' : 'The winning tile came from a discard.', tileId: ev.tile };
+  if (ev.type === 'exhausted') return { label: 'Wall exhausted', detail: 'No one completed a hand before the live wall ran out.', tileId: null };
+  return { label: 'Table update', detail: describePlayEvent(ev, g), tileId: null };
+}
+
+function renderPublicDiscardGroup(player, seatIndex) {
+  const group = document.createElement('div');
+  group.className = 'mj-play-public-group';
+  const shown = player.discards.slice(-10);
+  group.innerHTML = `
+    <div class="mj-play-public-head"><strong>${SEAT_NAMES[seatIndex]}</strong><span>${player.discards.length} discard${player.discards.length === 1 ? '' : 's'}</span></div>
+    <div class="mj-play-public-tiles"></div>
+  `;
+  const tiles = group.querySelector('.mj-play-public-tiles');
+  if (!shown.length) {
+    tiles.innerHTML = '<span class="mj-play-public-empty">none yet</span>';
+    return group;
+  }
+  shown.forEach((id, idx) => {
+    const tile = renderTile(id, { size: 'xs', button: false });
+    if (seatIndex === PLAY.game.lastDiscardSeat && idx === shown.length - 1 && PLAY.game.lastEvent?.type === 'discard') tile.classList.add('is-fresh');
+    tiles.appendChild(tile);
+  });
+  return group;
+}
+
+function renderPlayPublicBoard() {
+  const board = document.querySelector('#play-table .mj-play-board');
+  if (!board || !PLAY.game) return;
+  const g = PLAY.game;
+  recordPlayEvent();
+  board.hidden = !playBeginnerBoard;
+  if (!playBeginnerBoard) return;
+  const latest = latestPlayTileInfo(g);
+  const main = board.querySelector('[data-role="public-board-main"]');
+  const rail = board.querySelector('[data-role="event-rail"]');
+  if (!main || !rail) return;
+
+  main.innerHTML = `
+    <div class="mj-play-latest">
+      <div class="mj-play-latest-copy">
+        <div class="mj-play-board-kicker">Latest table change</div>
+        <div class="mj-play-latest-h">${latest.label}</div>
+        <p>${latest.detail}</p>
+      </div>
+      <div class="mj-play-latest-tile" data-role="latest-tile"></div>
+    </div>
+    <div class="mj-play-compass" aria-label="Turn order">
+      ${SEAT_NAMES.map((name, i) => `<span class="${i === g.turn && PLAY.mode !== 'ended' ? 'is-active' : ''} ${g.players[i].isDealer ? 'is-dealer' : ''}"><strong>${name}</strong><em>${i === PLAY.humanSeat ? 'you' : g.players[i].isDealer ? 'dealer' : ''}</em></span>`).join('')}
+    </div>
+    <div class="mj-play-public">
+      <div class="mj-play-board-kicker">Public tiles on the board</div>
+      <div class="mj-play-public-grid" data-role="public-discards"></div>
+      <div class="mj-play-public-melds" data-role="public-melds"></div>
+    </div>
+  `;
+
+  const latestTile = main.querySelector('[data-role="latest-tile"]');
+  if (latestTile) {
+    if (latest.tileId && TILE_BY_ID[latest.tileId]) latestTile.appendChild(renderTile(latest.tileId, { size: 'lg', button: false }));
+    else latestTile.innerHTML = '<span class="mj-play-latest-placeholder">?</span>';
+  }
+
+  const discards = main.querySelector('[data-role="public-discards"]');
+  if (discards) g.players.forEach((p, i) => discards.appendChild(renderPublicDiscardGroup(p, i)));
+
+  const melds = main.querySelector('[data-role="public-melds"]');
+  if (melds) {
+    const exposed = [];
+    g.players.forEach((p, i) => p.melds.forEach(m => exposed.push({ ...m, seat: i })));
+    if (!exposed.length) {
+      melds.innerHTML = '<span class="mj-play-public-empty">No exposed melds yet.</span>';
+    } else {
+      exposed.forEach(m => {
+        const wrap = document.createElement('div');
+        wrap.className = `mj-play-public-meld mj-meld-${m.type}`;
+        wrap.innerHTML = `<span>${SEAT_NAMES[m.seat]} ${m.type}</span>`;
+        const tiles = document.createElement('span');
+        tiles.className = 'mj-play-public-meld-tiles';
+        m.tiles.forEach(id => tiles.appendChild(renderTile(id, { size: 'xs', button: false })));
+        wrap.appendChild(tiles);
+        melds.appendChild(wrap);
+      });
+    }
+  }
+
+  rail.innerHTML = `
+    <div class="mj-play-board-kicker">What changed?</div>
+    <ol>${(playEventLog.length ? playEventLog : ['Round dealt. Watch draws, discards and calls here.']).map(item => `<li>${item}</li>`).join('')}</ol>
+    <div class="mj-play-board-counts"><span>Wall <strong>${wallRemaining(g.wall)}</strong></span><span>Turn <strong>${PLAY.mode === 'ended' ? '—' : SEAT_NAMES[g.turn]}</strong></span></div>
+  `;
+  wrapTermsIn(board);
 }
 
 /* Update only the dynamic content of one seat — tiles & discards.
@@ -1941,6 +2113,7 @@ function renderPlayFull() {
     const i = parseInt(seat.dataset.seat, 10);
     if (!Number.isNaN(i)) updatePlaySeat(seat, i);
   });
+  renderPlayPublicBoard();
   renderPlayActionBar();
   renderPlayStatus();
   if (PLAY.mode === 'ended') renderPlayWinBanner();
@@ -1952,8 +2125,8 @@ function renderPlayActionBar() {
   bar.innerHTML = '';
   if (PLAY.mode === 'awaiting-discard') {
     const msg = document.createElement('div');
-    msg.className = 'mj-play-prompt';
-    msg.innerHTML = '<strong>Your turn.</strong> Click any tile in your hand to discard it.';
+    msg.className = 'mj-play-prompt mj-play-decision-card';
+    msg.innerHTML = `<div class="mj-play-decision-kicker">Your decision</div><strong>Your turn.</strong>${playHint('Click any tile in your hand to discard it. The public board above shows the latest discard history.')}`;
     bar.appendChild(msg);
     return;
   }
@@ -1966,8 +2139,8 @@ function renderPlayActionBar() {
       ? `<strong>You can declare Mahjong</strong> on ${from}'s <em>${tile.name}</em>!`
       : `<strong>${from} discarded ${tile.name}.</strong> You can call <em>${kindLabel}</em>.`;
     const msg = document.createElement('div');
-    msg.className = 'mj-play-prompt mj-play-prompt-call';
-    msg.innerHTML = promptText;
+    msg.className = 'mj-play-prompt mj-play-prompt-call mj-play-decision-card';
+    msg.innerHTML = `<div class="mj-play-decision-kicker">Claim opportunity</div>${promptText}${playHint('Calling exposes tiles but can complete a set or win the hand right now.')}`;
     bar.appendChild(msg);
 
     // Show the would-be meld preview
@@ -2006,7 +2179,7 @@ function renderPlayActionBar() {
   const ev = PLAY.game?.lastEvent;
   if (ev) {
     const msg = document.createElement('div');
-    msg.className = 'mj-play-prompt';
+    msg.className = 'mj-play-prompt mj-play-decision-card';
     const name = SEAT_NAMES[ev.player ?? PLAY.game.turn];
     if (ev.type === 'draw') {
       msg.innerHTML = `<em>${name} draws.</em>`;
@@ -2033,13 +2206,25 @@ function renderPlayStatus() {
       <span>Round <em data-stat="round">East</em></span>
       <span>Wall <em data-stat="wall">—</em> left</span>
       <span>Turn <em data-stat="turn">—</em></span>
+      <span class="mj-play-toggles">
+        <button type="button" data-play-toggle="board" aria-pressed="true">Beginner board on</button>
+        <button type="button" data-play-toggle="hints" aria-pressed="true">Hints on</button>
+      </span>
     `;
+    status.querySelectorAll('[data-play-toggle]').forEach(btn => btn.addEventListener('click', () => togglePlayOption(btn.dataset.playToggle)));
     status.dataset.built = '1';
   }
   const wallEl = status.querySelector('[data-stat="wall"]');
   const turnEl = status.querySelector('[data-stat="turn"]');
   if (wallEl) wallEl.textContent = String(wallRemaining(g.wall));
   if (turnEl) turnEl.textContent = PLAY.mode === 'ended' ? '—' : SEAT_NAMES[g.turn];
+  status.querySelectorAll('[data-play-toggle]').forEach(btn => {
+    const on = btn.dataset.playToggle === 'board' ? playBeginnerBoard : playHints;
+    btn.setAttribute('aria-pressed', String(on));
+    btn.textContent = btn.dataset.playToggle === 'board'
+      ? `Beginner board ${on ? 'on' : 'off'}`
+      : `Hints ${on ? 'on' : 'off'}`;
+  });
 }
 
 function renderPlayWinBanner() {
@@ -2122,7 +2307,12 @@ function selfTest() {
   console.assert(w.length === 1 && w[0] === 'c2', 'pair wait: ' + JSON.stringify(w));
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+let runtimeBooted = false;
+
+export function initMahjongRuntime() {
+  if (runtimeBooted) return;
+  runtimeBooted = true;
+
   initNav();
   initTileExplorer();
   initHands();
@@ -2137,4 +2327,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wrap Chinese terms in tooltip spans AFTER all dynamic content has rendered.
   wrapTermsIn(document.body);
   selfTest();
-});
+}
