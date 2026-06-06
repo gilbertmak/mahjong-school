@@ -63,7 +63,7 @@ export function PlayerSeat({
           <span className="mj-demo-seat-label">{isDealer ? (empty ? 'dealer' : 'dealer · 莊') : ''}</span>
         </div>
         {empty ? (
-          <div className="mj-demo-row mj-demo-row-empty">— deal a round to begin —</div>
+          <div className="mj-demo-row mj-demo-row-empty">deal a round to begin,</div>
         ) : (
           <>
             <div className="mj-demo-row mj-demo-row-hand">

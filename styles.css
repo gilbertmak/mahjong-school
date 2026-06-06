@@ -286,7 +286,7 @@ html, body {
   position: relative;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 112px 72px;
+  padding: 72px 72px;
   border-top: 1px solid var(--rule);
   scroll-margin-top: 20px;
 }
@@ -303,7 +303,7 @@ html, body {
   border: 1px solid var(--jade);
   border-radius: 2px;
 }
-.mj-section-head { max-width: 880px; margin-bottom: 64px; }
+.mj-section-head { max-width: 880px; margin-bottom: 44px; }
 /* Section "logo" — the Chinese character set as a celadon seal mark. */
 .mj-kicker {
   display: inline-flex;
@@ -1721,8 +1721,8 @@ html, body {
 }
 
 .mj-demo-foot {
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--rule-soft);
   display: flex;
   justify-content: space-between;
@@ -1803,13 +1803,13 @@ html, body {
   background: var(--paper);
   border: 1px solid var(--rule);
   border-radius: 14px;
-  padding: 24px;
+  padding: 16px;
 }
 
 .mj-play-table {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .mj-play-welcome {
@@ -2078,7 +2078,7 @@ html, body {
   grid-template-rows: auto auto;
   gap: 4px 16px;
   align-items: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: var(--bg);
   border: 1px solid var(--rule-soft);
   border-radius: 10px;
@@ -2092,8 +2092,8 @@ html, body {
 .mj-play-seat.is-you {
   background: var(--paper);
   border-color: var(--rule);
-  padding: 14px 18px;
-  margin-top: 8px;
+  padding: 10px 14px;
+  margin-top: 4px;
 }
 .mj-play-seat.is-you.is-active {
   border-color: var(--jade);
@@ -2231,8 +2231,8 @@ html, body {
 
 /* Status + action zones */
 .mj-play-foot {
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--rule-soft);
   display: flex;
   flex-direction: column;
@@ -2296,7 +2296,7 @@ html, body {
   font-size: 15px;
   line-height: 1.5;
   color: var(--ink-soft);
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: var(--bg);
   border-left: 3px solid var(--ink-faint);
   border-radius: 0 6px 6px 0;
@@ -2524,11 +2524,12 @@ html, body {
   .mj-nav-mobile a.is-active { background: var(--jade-wash); color: var(--jade); font-weight: 500; }
   .mj-nav-mobile .mj-nav-num { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); min-width: 20px; }
   .mj-nav-mobile a.is-active .mj-nav-num { color: var(--jade); }
-  .mj-hero, .mj-section { padding: 60px 20px; }
+  .mj-hero { padding: 60px 20px; }
+  .mj-section { padding: 44px 20px; }
   .mj-foot { padding: 40px 20px; grid-template-columns: 1fr; }
   .mj-hero h1 { font-size: 48px; }
   .mj-hero h1 .mj-zh { font-size: 36px; }
-  .mj-section-head { margin-bottom: 40px; }
+  .mj-section-head { margin-bottom: 30px; }
   .mj-suit-row { grid-template-columns: 1fr; gap: 16px; }
   .mj-info-card { display: none; }
   .mj-hand-stage { padding: 24px; }
