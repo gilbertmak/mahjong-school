@@ -66,7 +66,7 @@ Update `#play-action` from a plain control bar into a decision card:
 - Action buttons with tile previews:
   - "Chow 2-3-4 Bamboo"
   - "Pung Red Dragon"
-  - "Win, 3 faan minimum met"
+  - "Win — 3 faan minimum met"
   - "Pass"
 - Disable impossible actions with a short reason instead of hiding all context.
 
@@ -74,8 +74,8 @@ Update `#play-action` from a plain control bar into a decision card:
 
 Add two low-risk toggles near the play controls:
 
-- **Beginner board: On/Off**, controls whether the central public-information panel is expanded.
-- **Hints: On/Off**, shows why the suggested discard/call is good without making the move automatically.
+- **Beginner board: On/Off** — controls whether the central public-information panel is expanded.
+- **Hints: On/Off** — shows why the suggested discard/call is good without making the move automatically.
 
 Default both toggles to `On` for first-time users.
 

@@ -1836,13 +1836,22 @@ html, body {
   line-height: 1.55;
 }
 
-/* Compact beginner round log, kept short to reduce scrolling in play mode. */
+/* Beginner public board — centralizes the visible state before the player's hand. */
 .mj-play-board {
-  padding: 10px 12px;
-  margin: 2px 0 4px;
-  background: var(--bg);
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  padding: 16px;
+  margin: 4px 0 6px;
+  background: linear-gradient(135deg, rgba(47, 110, 84, 0.08), rgba(201, 117, 52, 0.06));
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+}
+.mj-play-board-main {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(220px, 1.15fr);
+  gap: 12px;
+  min-width: 0;
 }
 .mj-play-board-kicker,
 .mj-play-decision-kicker {
@@ -1853,40 +1862,191 @@ html, body {
   color: var(--ink-muted);
   font-weight: 700;
 }
-.mj-play-event-rail {
+.mj-play-latest {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
+  padding: 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+}
+.mj-play-latest-copy { min-width: 0; }
+.mj-play-latest-h {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--ink);
+  font-weight: 500;
+  margin: 6px 0 8px;
+}
+.mj-play-latest p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.mj-play-latest-tile {
+  min-width: 78px;
+  min-height: 100px;
+  display: grid;
+  place-items: center;
+}
+.mj-play-latest-placeholder {
+  width: 58px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--rule);
+  border-radius: 8px;
+  color: var(--ink-faint);
+  font-family: var(--serif);
+  font-size: 30px;
+  background: var(--bg);
+}
+.mj-play-compass {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.mj-play-compass span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 9px;
+  background: rgba(255,255,255,0.35);
+  color: var(--ink-muted);
+}
+.mj-play-compass strong {
+  font-family: var(--serif);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1;
+}
+.mj-play-compass em {
+  min-height: 13px;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--ink-faint);
+}
+.mj-play-compass span.is-active {
+  border-color: var(--jade);
+  background: var(--jade-wash);
+  box-shadow: inset 0 -2px 0 var(--jade);
+}
+.mj-play-compass span.is-active strong { color: var(--jade); }
+.mj-play-public {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  min-width: 0;
+}
+.mj-play-public-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.mj-play-public-group {
+  min-width: 0;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--rule-soft);
+  border-radius: 9px;
+}
+.mj-play-public-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 5px;
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.mj-play-public-head strong {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.mj-play-public-tiles,
+.mj-play-public-meld-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  align-items: center;
+}
+.mj-play-public-empty {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+.mj-play-public-melds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.mj-play-public-meld {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  border: 1px dashed var(--jade);
+  background: var(--jade-wash);
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.mj-play-public-meld.mj-meld-pung,
+.mj-play-public-meld.mj-meld-kong {
+  border-color: var(--gold);
+  background: rgba(168, 133, 54, 0.10);
+}
+.mj-play-event-rail {
+  padding: 14px;
+  background: var(--bg);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
   min-width: 0;
 }
 .mj-play-event-rail ol {
-  margin: 0;
+  margin: 10px 0 0 18px;
   padding: 0;
   display: flex;
-  gap: 8px;
-  list-style: none;
-  overflow-x: auto;
+  flex-direction: column;
+  gap: 7px;
   color: var(--ink-soft);
   font-size: 13px;
   line-height: 1.35;
-  scrollbar-width: thin;
 }
-.mj-play-event-rail li {
-  flex: 0 0 auto;
-  max-width: 260px;
-  padding: 5px 8px;
-  background: var(--paper);
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.mj-play-event-rail li::marker { color: var(--jade); font-family: var(--mono); font-size: 10px; }
 .mj-play-board-counts {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule-soft);
   font-family: var(--sans);
   font-size: 10px;
   text-transform: uppercase;
@@ -1900,6 +2060,7 @@ html, body {
   letter-spacing: 0;
   text-transform: none;
 }
+.mj-play-public-tiles .is-fresh { animation: mjDemoFresh 0.6s ease-out; }
 .mj-play-decision-card {
   display: flex;
   flex-direction: column;
@@ -2237,7 +2398,14 @@ html, body {
 }
 
 @media (max-width: 900px) {
-  .mj-play { padding: 12px; }
+  .mj-play-board { grid-template-columns: 1fr; padding: 12px; }
+  .mj-play-board-main { grid-template-columns: 1fr; }
+  .mj-play-public { grid-column: auto; grid-row: auto; }
+  .mj-play-public-grid { grid-template-columns: 1fr; }
+  .mj-play-compass { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mj-play-latest { grid-template-columns: 1fr; }
+  .mj-play-latest-tile { min-height: 70px; }
+  .mj-play { padding: 18px; }
   .mj-play-seat { grid-template-columns: 70px 1fr; padding: 8px 10px; gap: 4px 10px; }
   .mj-play-seat-head { padding-right: 8px; }
   .mj-play-seat-name { font-size: 13px; }

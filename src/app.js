@@ -1910,12 +1910,15 @@ function ensurePlayStructure() {
   wrapTermsIn(table);
 }
 
-/* Beginner board helpers, centralize public information for new players. */
+/* Beginner board helpers — centralize public information for new players. */
 function createPlayBoardShell() {
   const board = document.createElement('section');
   board.className = 'mj-play-board';
   board.setAttribute('aria-label', 'Public board state');
-  board.innerHTML = '';
+  board.innerHTML = `
+    <div class="mj-play-board-main" data-role="public-board-main"></div>
+    <aside class="mj-play-event-rail" data-role="event-rail" aria-label="Recent round events"></aside>
+  `;
   return board;
 }
 
@@ -1954,6 +1957,38 @@ function recordPlayEvent() {
   playEventLog = playEventLog.slice(0, 8);
 }
 
+function latestPlayTileInfo(g) {
+  const ev = g.lastEvent;
+  if (!ev) return { label: 'Round dealt', detail: 'Your hand is at the bottom. Public discards and exposed melds will collect here.', tileId: null };
+  if (ev.type === 'draw') return { label: `${SEAT_NAMES[ev.player]} drew`, detail: ev.player === PLAY.humanSeat ? 'Pick one tile from your hand to discard.' : 'Opponents keep drawn tiles hidden unless discarded or melded.', tileId: ev.player === PLAY.humanSeat ? ev.tile : null };
+  if (ev.type === 'discard') return { label: `${SEAT_NAMES[ev.player]} discarded`, detail: 'This tile is now public. If you can claim it, your choices appear below.', tileId: ev.tile };
+  if (ev.type === 'call') return { label: `${SEAT_NAMES[ev.player]} called ${ev.kind}`, detail: `Claimed from ${SEAT_NAMES[ev.fromSeat]} and exposed as a meld.`, tileId: ev.tile };
+  if (ev.type === 'win') return { label: `${SEAT_NAMES[ev.player]} won`, detail: ev.source === 'self-draw' ? 'The winning tile came from the wall.' : 'The winning tile came from a discard.', tileId: ev.tile };
+  if (ev.type === 'exhausted') return { label: 'Wall exhausted', detail: 'No one completed a hand before the live wall ran out.', tileId: null };
+  return { label: 'Table update', detail: describePlayEvent(ev, g), tileId: null };
+}
+
+function renderPublicDiscardGroup(player, seatIndex) {
+  const group = document.createElement('div');
+  group.className = 'mj-play-public-group';
+  const shown = player.discards.slice(-10);
+  group.innerHTML = `
+    <div class="mj-play-public-head"><strong>${SEAT_NAMES[seatIndex]}</strong><span>${player.discards.length} discard${player.discards.length === 1 ? '' : 's'}</span></div>
+    <div class="mj-play-public-tiles"></div>
+  `;
+  const tiles = group.querySelector('.mj-play-public-tiles');
+  if (!shown.length) {
+    tiles.innerHTML = '<span class="mj-play-public-empty">none yet</span>';
+    return group;
+  }
+  shown.forEach((id, idx) => {
+    const tile = renderTile(id, { size: 'xs', button: false });
+    if (seatIndex === PLAY.game.lastDiscardSeat && idx === shown.length - 1 && PLAY.game.lastEvent?.type === 'discard') tile.classList.add('is-fresh');
+    tiles.appendChild(tile);
+  });
+  return group;
+}
+
 function renderPlayPublicBoard() {
   const board = document.querySelector('#play-table .mj-play-board');
   if (!board || !PLAY.game) return;
@@ -1961,18 +1996,68 @@ function renderPlayPublicBoard() {
   recordPlayEvent();
   board.hidden = !playBeginnerBoard;
   if (!playBeginnerBoard) return;
+  const latest = latestPlayTileInfo(g);
+  const main = board.querySelector('[data-role="public-board-main"]');
+  const rail = board.querySelector('[data-role="event-rail"]');
+  if (!main || !rail) return;
 
-  board.innerHTML = `
-    <div class="mj-play-event-rail" data-role="event-rail" aria-label="Recent round events">
-      <div class="mj-play-board-kicker">What changed?</div>
-      <ol>${(playEventLog.length ? playEventLog : ['Round dealt. Watch draws, discards and calls here.']).map(item => `<li>${item}</li>`).join('')}</ol>
-      <div class="mj-play-board-counts"><span>Wall <strong>${wallRemaining(g.wall)}</strong></span></div>
+  main.innerHTML = `
+    <div class="mj-play-latest">
+      <div class="mj-play-latest-copy">
+        <div class="mj-play-board-kicker">Latest table change</div>
+        <div class="mj-play-latest-h">${latest.label}</div>
+        <p>${latest.detail}</p>
+      </div>
+      <div class="mj-play-latest-tile" data-role="latest-tile"></div>
     </div>
+    <div class="mj-play-compass" aria-label="Turn order">
+      ${SEAT_NAMES.map((name, i) => `<span class="${i === g.turn && PLAY.mode !== 'ended' ? 'is-active' : ''} ${g.players[i].isDealer ? 'is-dealer' : ''}"><strong>${name}</strong><em>${i === PLAY.humanSeat ? 'you' : g.players[i].isDealer ? 'dealer' : ''}</em></span>`).join('')}
+    </div>
+    <div class="mj-play-public">
+      <div class="mj-play-board-kicker">Public tiles on the board</div>
+      <div class="mj-play-public-grid" data-role="public-discards"></div>
+      <div class="mj-play-public-melds" data-role="public-melds"></div>
+    </div>
+  `;
+
+  const latestTile = main.querySelector('[data-role="latest-tile"]');
+  if (latestTile) {
+    if (latest.tileId && TILE_BY_ID[latest.tileId]) latestTile.appendChild(renderTile(latest.tileId, { size: 'lg', button: false }));
+    else latestTile.innerHTML = '<span class="mj-play-latest-placeholder">?</span>';
+  }
+
+  const discards = main.querySelector('[data-role="public-discards"]');
+  if (discards) g.players.forEach((p, i) => discards.appendChild(renderPublicDiscardGroup(p, i)));
+
+  const melds = main.querySelector('[data-role="public-melds"]');
+  if (melds) {
+    const exposed = [];
+    g.players.forEach((p, i) => p.melds.forEach(m => exposed.push({ ...m, seat: i })));
+    if (!exposed.length) {
+      melds.innerHTML = '<span class="mj-play-public-empty">No exposed melds yet.</span>';
+    } else {
+      exposed.forEach(m => {
+        const wrap = document.createElement('div');
+        wrap.className = `mj-play-public-meld mj-meld-${m.type}`;
+        wrap.innerHTML = `<span>${SEAT_NAMES[m.seat]} ${m.type}</span>`;
+        const tiles = document.createElement('span');
+        tiles.className = 'mj-play-public-meld-tiles';
+        m.tiles.forEach(id => tiles.appendChild(renderTile(id, { size: 'xs', button: false })));
+        wrap.appendChild(tiles);
+        melds.appendChild(wrap);
+      });
+    }
+  }
+
+  rail.innerHTML = `
+    <div class="mj-play-board-kicker">What changed?</div>
+    <ol>${(playEventLog.length ? playEventLog : ['Round dealt. Watch draws, discards and calls here.']).map(item => `<li>${item}</li>`).join('')}</ol>
+    <div class="mj-play-board-counts"><span>Wall <strong>${wallRemaining(g.wall)}</strong></span><span>Turn <strong>${PLAY.mode === 'ended' ? '—' : SEAT_NAMES[g.turn]}</strong></span></div>
   `;
   wrapTermsIn(board);
 }
 
-/* Update only the dynamic content of one seat, tiles & discards.
+/* Update only the dynamic content of one seat — tiles & discards.
    The seat scaffold and seat-head remain intact across events. */
 function updatePlaySeat(seat, i) {
   const g = PLAY.game;
@@ -2119,8 +2204,8 @@ function renderPlayStatus() {
   if (!status.dataset.built) {
     status.innerHTML = `
       <span>Round <em data-stat="round">East</em></span>
-      <span>Wall <em data-stat="wall">-</em> left</span>
-      <span>Turn <em data-stat="turn">-</em></span>
+      <span>Wall <em data-stat="wall">—</em> left</span>
+      <span>Turn <em data-stat="turn">—</em></span>
       <span class="mj-play-toggles">
         <button type="button" data-play-toggle="board" aria-pressed="true">Beginner board on</button>
         <button type="button" data-play-toggle="hints" aria-pressed="true">Hints on</button>
@@ -2132,7 +2217,7 @@ function renderPlayStatus() {
   const wallEl = status.querySelector('[data-stat="wall"]');
   const turnEl = status.querySelector('[data-stat="turn"]');
   if (wallEl) wallEl.textContent = String(wallRemaining(g.wall));
-  if (turnEl) turnEl.textContent = PLAY.mode === 'ended' ? '-' : SEAT_NAMES[g.turn];
+  if (turnEl) turnEl.textContent = PLAY.mode === 'ended' ? '—' : SEAT_NAMES[g.turn];
   status.querySelectorAll('[data-play-toggle]').forEach(btn => {
     const on = btn.dataset.playToggle === 'board' ? playBeginnerBoard : playHints;
     btn.setAttribute('aria-pressed', String(on));
